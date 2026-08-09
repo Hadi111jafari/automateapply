@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard · Amber</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ============ SIDEBAR (open) ============ -->
+    <!-- ============ SIDEBAR (open) ============ -->
+  <aside class="sidebar">
+    <a href="dashboard.html" class="brand">
+      <div class="brand-mark"></div>
+      Amber
+    </a>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Workspace</div>
+      <a href="dashboard.html" class="side-link active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+        <span class="label">Dashboard</span>
+        <span class="badge">7</span>
+      </a>
+      <a href="jobs.html" class="side-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <span class="label">Job Search</span>
+        <span class="badge">147</span>
+      </a>
+      <a href="applications.html" class="side-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span class="label">Applications</span>
+        <span class="badge">12</span>
+      </a>
+      <a href="resume.html" class="side-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+        <span class="label">Resume &amp; AI</span>
+      </a>
+      <a href="interview.html" class="side-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+        <span class="label">Interview</span>
+        <span class="badge">2</span>
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Insights</div>
+      <a href="#" class="side-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span class="label">Market Intel</span>
+      </a>
+      <a href="#" class="side-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span class="label">Messages</span>
+        <span class="badge">5</span>
+      </a>
+    </div>
+
+    <div class="sidebar-foot">
+      <a href="settings.html" class="side-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="label">Settings</span>
+      </a>
+      <a href="index.html" class="side-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span class="label">Sign out</span>
+      </a>
+      <div class="sidebar-user">
+        <div class="avatar">SC</div>
+        <div class="who">
+          <div class="name">Sarah Chen</div>
+          <small>Pro plan · Sarah@c...</small>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main>
+    <div class="app-topbar">
+      <div>
+        <div class="crumbs">
+          <span>Workspace</span>
+          <span class="sep">/</span>
+          <span class="here">Dashboard</span>
+        </div>
+        <h1 class="mt-8">Good afternoon, Sarah</h1>
+      </div>
+      <div class="searchbox">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input placeholder="Search jobs, companies, contacts…">
+        <span class="kbd">⌘K</span>
+      </div>
+      <button class="icon-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="ind"></span>
+      </button>
+      <a href="jobs.html" class="btn btn-primary btn-sm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New search
+      </a>
+    </div>
+
+    <div class="page">
+
+      <!-- Top: hero stats with radial gauges -->
+      <section class="dash-top">
+        <!-- Big headline gauge -->
+        <div class="card hero-stat">
+          <div class="hs-row">
+            <div>
+              <div class="hs-label"><span class="dot"></span> This week</div>
+              <div class="hs-num">47</div>
+              <div class="hs-sub">applications sent · 12 interviews · 1 offer out</div>
+              <div class="hs-meta">
+                <span class="stat-delta up">↑ 23% vs last week</span>
+                <span class="text-muted text-sm">avg response 2.4d</span>
+              </div>
+            </div>
+            <div class="hs-gauge">
+              <svg viewBox="0 0 160 160">
+                <defs>
+                  <linearGradient id="hg" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#fcd28a"/>
+                    <stop offset="100%" stop-color="#d97a1e"/>
+                  </linearGradient>
+                </defs>
+                <circle cx="80" cy="80" r="68" fill="none" stroke="rgba(255,220,170,0.06)" stroke-width="1"/>
+                <circle cx="80" cy="80" r="60" fill="none" stroke="rgba(255,220,170,0.08)" stroke-width="8"/>
+                <circle cx="80" cy="80" r="60" fill="none" stroke="url(#hg)" stroke-width="8" stroke-linecap="round"
+                  stroke-dasharray="377" stroke-dashoffset="75" transform="rotate(-90 80 80)"/>
+              </svg>
+              <div class="hs-gauge-text">
+                <div class="pct">80<span>%</span></div>
+                <div class="lbl">target</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3 small stat cards -->
+        <div class="dash-stats-grid">
+          <div class="stat card">
+            <div class="stat-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              Interviews
+            </div>
+            <div class="stat-value">12</div>
+            <div class="row spread">
+              <span class="stat-delta up">↑ 3 today</span>
+              <svg class="stat-spark" viewBox="0 0 120 40" preserveAspectRatio="none" style="width:80px; height:32px;">
+                <polyline points="0,32 15,30 30,30 45,25 60,20 75,22 90,15 105,12 120,8" fill="none" stroke="#e89438" stroke-width="2"/>
+              </svg>
+            </div>
+          </div>
+          <div class="stat card">
+            <div class="stat-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Response time
+            </div>
+            <div class="stat-value">2.4<span style="font-size:20px;color:var(--text-3);">d</span></div>
+            <div class="row spread">
+              <span class="stat-delta up">↓ 0.8d faster</span>
+              <svg class="stat-spark" viewBox="0 0 120 40" preserveAspectRatio="none" style="width:80px; height:32px;">
+                <polyline points="0,10 15,12 30,18 45,20 60,25 75,28 90,30 105,32 120,35" fill="none" stroke="#6dd49a" stroke-width="2"/>
+              </svg>
+            </div>
+          </div>
+          <div class="stat card">
+            <div class="stat-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              Offer comp
+            </div>
+            <div class="stat-value">$172<span style="font-size:20px;color:var(--text-3);">k</span></div>
+            <div class="row spread">
+              <span class="stat-delta up">↑ $14k vs target</span>
+              <svg class="stat-spark" viewBox="0 0 120 40" preserveAspectRatio="none" style="width:80px; height:32px;">
+                <polyline points="0,30 15,28 30,22 45,24 60,18 75,15 90,12 105,10 120,6" fill="none" stroke="#f4b35a" stroke-width="2"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Live run -->
+      <div class="card live-run">
+        <div class="row spread mb-16">
+          <div>
+            <div class="row gap-8">
+              <span class="live-dot"></span>
+              <strong>Live run · Cycle 47</strong>
+              <span class="chip chip-accent">Auto-apply</span>
+            </div>
+            <div class="text-xs text-muted mt-8" style="margin-top:6px;">Started 14 minutes ago · next check in 23 min</div>
+          </div>
+          <div class="row gap-8">
+            <button class="btn btn-ghost btn-sm">Pause</button>
+            <button class="btn btn-primary btn-sm">View log</button>
+          </div>
+        </div>
+        <div class="lr-grid">
+          <div class="lr-stage">
+            <div class="lr-num">241</div>
+            <div class="lr-lbl">Discovered</div>
+            <div class="progress"><div class="progress-fill" style="width:100%"></div></div>
+          </div>
+          <div class="lr-stage">
+            <div class="lr-num">47</div>
+            <div class="lr-lbl">Tailored resumes</div>
+            <div class="progress"><div class="progress-fill" style="width:100%"></div></div>
+          </div>
+          <div class="lr-stage">
+            <div class="lr-num">23</div>
+            <div class="lr-lbl">Submitted</div>
+            <div class="progress"><div class="progress-fill" style="width:49%"></div></div>
+          </div>
+          <div class="lr-stage">
+            <div class="lr-num">4</div>
+            <div class="lr-lbl">Pending review</div>
+            <div class="progress"><div class="progress-fill" style="width:8%; background: linear-gradient(90deg, #f4b35a, #e89438); box-shadow: 0 0 12px rgba(244, 179, 90, 0.5);"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Two columns -->
+      <div class="dash-cols">
+        <div class="stack-lg">
+
+          <div class="card" style="padding: 24px;">
+            <div class="section-head">
+              <div>
+                <h3>High-match opportunities</h3>
+                <p>Tailored resumes ready · sorted by match</p>
+              </div>
+              <a href="jobs.html" class="btn btn-ghost btn-sm">View all 147 →</a>
+            </div>
+
+            <div class="stack" style="gap:10px;">
+              <div class="job-row">
+                <div class="job-logo" style="background: linear-gradient(135deg, #635bff, #4f63ff);">S</div>
+                <div>
+                  <div class="job-title">Senior Product Manager, Growth</div>
+                  <div class="job-meta">
+                    <span><strong style="color:var(--text-2);">Stripe</strong></span>
+                    <span class="dot"></span>
+                    <span>Remote (US)</span>
+                    <span class="dot"></span>
+                    <span>$210k–$280k</span>
+                    <span class="dot"></span>
+                    <span>4h ago</span>
+                  </div>
+                </div>
+                <div class="row gap-8">
+                  <span class="chip chip-accent">Tailored</span>
+                  <span class="chip" style="font-size:10px;">+47 comp boosts</span>
+                </div>
+                <div class="job-score">
+                  <div class="job-score-num hi">96</div>
+                </div>
+                <button class="btn btn-primary btn-sm">Apply</button>
+              </div>
+
+              <div class="job-row">
+                <div class="job-logo" style="background: linear-gradient(135deg, #5e6ad2, #4f63ff);">L</div>
+                <div>
+                  <div class="job-title">Group Product Manager, Platform</div>
+                  <div class="job-meta">
+                    <span><strong style="color:var(--text-2);">Linear</strong></span>
+                    <span class="dot"></span>
+                    <span>Remote</span>
+                    <span class="dot"></span>
+                    <span>$200k–$260k</span>
+                    <span class="dot"></span>
+                    <span>12h ago</span>
+                  </div>
+                </div>
+                <div class="row gap-8">
+                  <span class="chip chip-accent">Tailored</span>
+                </div>
+                <div class="job-score">
+                  <div class="job-score-num hi">93</div>
+                </div>
+                <button class="btn btn-primary btn-sm">Apply</button>
+              </div>
+
+              <div class="job-row">
+                <div class="job-logo" style="background: linear-gradient(135deg, #000, #434343);">V</div>
+                <div>
+                  <div class="job-title">Director of Product, AI</div>
+                  <div class="job-meta">
+                    <span><strong style="color:var(--text-2);">Vercel</strong></span>
+                    <span class="dot"></span>
+                    <span>SF / Remote</span>
+                    <span class="dot"></span>
+                    <span>$240k–$310k</span>
+                    <span class="dot"></span>
+                    <span>1d ago</span>
+                  </div>
+                </div>
+                <div class="row gap-8">
+                  <span class="chip chip-accent">Tailored</span>
+                </div>
+                <div class="job-score">
+                  <div class="job-score-num hi">91</div>
+                </div>
+                <button class="btn btn-primary btn-sm">Apply</button>
+              </div>
+
+              <div class="job-row">
+                <div class="job-logo" style="background: linear-gradient(135deg, #d97757, #c66949);">N</div>
+                <div>
+                  <div class="job-title">Senior PM, Enterprise</div>
+                  <div class="job-meta">
+                    <span><strong style="color:var(--text-2);">Notion</strong></span>
+                    <span class="dot"></span>
+                    <span>San Francisco</span>
+                    <span class="dot"></span>
+                    <span>$190k–$240k</span>
+                    <span class="dot"></span>
+                    <span>2d ago</span>
+                  </div>
+                </div>
+                <div class="row gap-8">
+                  <span class="chip chip-warn">Needs review</span>
+                </div>
+                <div class="job-score">
+                  <div class="job-score-num">88</div>
+                </div>
+                <button class="btn btn-ghost btn-sm">Review</button>
+              </div>
+
+              <div class="job-row">
+                <div class="job-logo" style="background: linear-gradient(135deg, #cb6e1f, #de7c2b);">A</div>
+                <div>
+                  <div class="job-title">Product Manager, API Platform</div>
+                  <div class="job-meta">
+                    <span><strong style="color:var(--text-2);">Anthropic</strong></span>
+                    <span class="dot"></span>
+                    <span>San Francisco</span>
+                    <span class="dot"></span>
+                    <span>$220k–$290k</span>
+                    <span class="dot"></span>
+                    <span>3h ago</span>
+                  </div>
+                </div>
+                <div class="row gap-8">
+                  <span class="chip chip-accent">Tailored</span>
+                </div>
+                <div class="job-score">
+                  <div class="job-score-num">87</div>
+                </div>
+                <button class="btn btn-primary btn-sm">Apply</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="padding: 24px;">
+            <div class="section-head">
+              <div>
+                <h3>AI activity log</h3>
+                <p>What Amber did in the last 24 hours</p>
+              </div>
+              <div class="tabs">
+                <button class="tab active">Today</button>
+                <button class="tab">Week</button>
+                <button class="tab">Month</button>
+              </div>
+            </div>
+
+            <div>
+              <div class="feed-item">
+                <div class="feed-dot brand">✓</div>
+                <div class="feed-content">
+                  <div class="feed-title">Applied to <strong>Linear</strong> · Group PM, Platform</div>
+                  <div class="feed-time">2 minutes ago · Resume v12 · Cover letter drafted</div>
+                </div>
+                <span class="chip chip-ok">Sent</span>
+              </div>
+              <div class="feed-item">
+                <div class="feed-dot brand">↗</div>
+                <div class="feed-content">
+                  <div class="feed-title"><strong>Stripe</strong> replied to your application</div>
+                  <div class="feed-time">14 minutes ago · "Let's schedule a 30-min screen next week"</div>
+                </div>
+                <button class="btn btn-primary btn-sm">Reply</button>
+              </div>
+              <div class="feed-item">
+                <div class="feed-dot warn">⚡</div>
+                <div class="feed-content">
+                  <div class="feed-title">Tailored resume for <strong>Anthropic · PM, API</strong></div>
+                  <div class="feed-time">38 minutes ago · 96% match · 4.2s</div>
+                </div>
+                <span class="chip chip-info">Ready</span>
+              </div>
+              <div class="feed-item">
+                <div class="feed-dot warn">!</div>
+                <div class="feed-content">
+                  <div class="feed-title">Followed up with <strong>Ramp</strong> · Senior PM</div>
+                  <div class="feed-time">1 hour ago · No response in 6 days · Soft nudge sent</div>
+                </div>
+                <span class="chip chip-warn">Nudge</span>
+              </div>
+              <div class="feed-item">
+                <div class="feed-dot brand">✓</div>
+                <div class="feed-content">
+                  <div class="feed-title">Applied to <strong>Vercel</strong> · Director of Product, AI</div>
+                  <div class="feed-time">2 hours ago · Resume v9</div>
+                </div>
+                <span class="chip chip-ok">Sent</span>
+              </div>
+              <div class="feed-item">
+                <div class="feed-dot err">✕</div>
+                <div class="feed-content">
+                  <div class="feed-title">Skipped <strong>Meta</strong> · Senior PM</div>
+                  <div class="feed-time">3 hours ago · Salary below your floor ($145k vs $180k)</div>
+                </div>
+                <span class="chip chip-err">Filtered</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right column -->
+        <div class="stack-lg">
+
+          <!-- Pipeline -->
+          <div class="card" style="padding: 24px;">
+            <div class="section-head">
+              <div>
+                <h3>Pipeline</h3>
+                <p>Where everything stands</p>
+              </div>
+              <a href="applications.html" class="btn btn-quiet btn-sm">View →</a>
+            </div>
+            <div class="stack" style="gap:16px;">
+              <div>
+                <div class="row spread text-sm mb-8"><span>Applied</span><span class="mono text-muted">89</span></div>
+                <div class="progress"><div class="progress-fill" style="width:100%"></div></div>
+              </div>
+              <div>
+                <div class="row spread text-sm mb-8"><span>Recruiter screen</span><span class="mono text-muted">12</span></div>
+                <div class="progress"><div class="progress-fill" style="width:14%; background: linear-gradient(90deg, #8bb8e0, #5b8fc7); box-shadow: 0 0 12px rgba(139, 184, 224, 0.4);"></div></div>
+              </div>
+              <div>
+                <div class="row spread text-sm mb-8"><span>Technical</span><span class="mono text-muted">5</span></div>
+                <div class="progress"><div class="progress-fill" style="width:6%; background: linear-gradient(90deg, #f4b35a, #e89438); box-shadow: 0 0 12px rgba(244, 179, 90, 0.4);"></div></div>
+              </div>
+              <div>
+                <div class="row spread text-sm mb-8"><span>Final round</span><span class="mono text-muted">2</span></div>
+                <div class="progress"><div class="progress-fill" style="width:2%; background: linear-gradient(90deg, #c8e09a, #a9e631); box-shadow: 0 0 12px rgba(169, 230, 49, 0.4);"></div></div>
+              </div>
+              <div>
+                <div class="row spread text-sm mb-8"><span>Offers</span><span class="mono" style="color: var(--accent-400);">1</span></div>
+                <div class="progress"><div class="progress-fill" style="width:1%; background: linear-gradient(90deg, #c8e09a, #a9e631);"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Upcoming -->
+          <div class="card" style="padding: 24px;">
+            <div class="section-head">
+              <div>
+                <h3>Upcoming</h3>
+                <p>Don't miss these</p>
+              </div>
+            </div>
+            <div class="stack" style="gap:12px;">
+              <div class="up-item">
+                <div class="up-time"><div class="up-day">TUE</div><div class="up-num">17</div></div>
+                <div style="flex:1;min-width:0;">
+                  <div class="text-sm" style="font-weight:500;">Stripe · Recruiter screen</div>
+                  <div class="text-xs text-muted mt-8" style="margin-top:2px;">10:00 AM · 30 min · Zoom</div>
+                </div>
+                <span class="chip chip-info">Prep ready</span>
+              </div>
+              <div class="up-item">
+                <div class="up-time"><div class="up-day">THU</div><div class="up-num">19</div></div>
+                <div style="flex:1;min-width:0;">
+                  <div class="text-sm" style="font-weight:500;">Linear · Hiring manager</div>
+                  <div class="text-xs text-muted mt-8" style="margin-top:2px;">2:30 PM · 45 min</div>
+                </div>
+                <span class="chip chip-warn">Prep due</span>
+              </div>
+              <div class="up-item">
+                <div class="up-time">
+                  <div class="up-day">MON</div>
+                  <div class="up-num">23</div>
+                  <div class="up-dot" style="background: var(--ok);"></div>
+                </div>
+                <div style="flex:1;min-width:0;">
+                  <div class="text-sm" style="font-weight:500;">Vercel · Final round</div>
+                  <div class="text-xs text-muted mt-8" style="margin-top:2px;">Onsite · SF or remote</div>
+                </div>
+                <span class="chip chip-accent">Onsite</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Market intel -->
+          <div class="card" style="padding: 24px;">
+            <div class="section-head">
+              <div>
+                <h3>Market intel</h3>
+                <p>For your target roles</p>
+              </div>
+            </div>
+
+            <div>
+              <div class="mi-trend">
+                <div class="row spread">
+                  <div class="text-sm" style="font-weight:500;">Senior PM · Remote US</div>
+                  <span class="chip chip-ok" style="font-size: 10px;">+8.2%</span>
+                </div>
+                <div class="mi-num">$215k <span class="text-muted text-sm" style="font-family: var(--font-sans); font-style: normal;">median</span></div>
+                <svg viewBox="0 0 240 50" preserveAspectRatio="none" style="width:100%; height:40px; margin-top:6px;">
+                  <defs>
+                    <linearGradient id="mi" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stop-color="#d97a1e"/>
+                      <stop offset="100%" stop-color="#fcd28a"/>
+                    </linearGradient>
+                    <linearGradient id="mif" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#fcd28a" stop-opacity="0.3"/>
+                      <stop offset="100%" stop-color="#fcd28a" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,40 Q30,38 60,32 T120,22 T180,15 T240,8" fill="none" stroke="url(#mi)" stroke-width="2.5"/>
+                  <path d="M0,40 Q30,38 60,32 T120,22 T180,15 T240,8 L240,50 L0,50 Z" fill="url(#mif)"/>
+                </svg>
+              </div>
+
+              <div class="divider"></div>
+
+              <div>
+                <div class="text-xs text-muted mb-8" style="margin-bottom:12px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600;">Hot skills this week</div>
+                <div class="row gap-8" style="flex-wrap:wrap;">
+                  <span class="chip chip-accent">AI/ML product</span>
+                  <span class="chip" style="background: rgba(169, 230, 49, 0.12); border-color: rgba(169, 230, 49, 0.3); color: #c8e09a;">+34% demand</span>
+                  <span class="chip">Pricing</span>
+                  <span class="chip">Growth PM</span>
+                  <span class="chip" style="background: rgba(169, 230, 49, 0.12); border-color: rgba(169, 230, 49, 0.3); color: #c8e09a;">+18% demand</span>
+                  <span class="chip">B2B SaaS</span>
+                </div>
+              </div>
+
+              <div class="divider"></div>
+
+              <div>
+                <div class="text-xs text-muted mb-16" style="margin-bottom:14px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600;">Hiring velocity (last 7d)</div>
+                <div class="stack" style="gap:10px;">
+                  <div class="row spread text-sm">
+                    <span class="row gap-8"><span style="width:8px;height:8px;background:var(--brand-400);border-radius:50%;box-shadow:0 0 8px var(--brand-400);"></span> Stripe</span>
+                    <span class="mono text-xs">+12</span>
+                  </div>
+                  <div class="row spread text-sm">
+                    <span class="row gap-8"><span style="width:8px;height:8px;background:#a9e631;border-radius:50%;box-shadow:0 0 8px #a9e631;"></span> Linear</span>
+                    <span class="mono text-xs">+8</span>
+                  </div>
+                  <div class="row spread text-sm">
+                    <span class="row gap-8"><span style="width:8px;height:8px;background:var(--info);border-radius:50%;box-shadow:0 0 8px var(--info);"></span> Vercel</span>
+                    <span class="mono text-xs">+6</span>
+                  </div>
+                  <div class="row spread text-sm">
+                    <span class="row gap-8"><span style="width:8px;height:8px;background:var(--warn);border-radius:50%;box-shadow:0 0 8px var(--warn);"></span> Anthropic</span>
+                    <span class="mono text-xs">+4</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div class="toast-stack" id="toastStack"></div>
+<script src="js/main.js"></script>
+</body>
+</html>

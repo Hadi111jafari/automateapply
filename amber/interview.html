@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interview · Amber</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/app.css">
+<style>
+.live-card {
+  background: radial-gradient(circle at 50% 0%, rgba(232, 148, 56, 0.15), transparent 60%), var(--bg-2);
+  border: 1px solid var(--brand-500);
+  box-shadow: 0 0 0 1px var(--brand-500), 0 0 60px rgba(232, 148, 56, 0.2);
+}
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+    <!-- ============ SIDEBAR (open) ============ -->
+  <aside class="sidebar">
+    <a href="dashboard.html" class="brand">
+      <div class="brand-mark"></div>
+      Amber
+    </a>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Workspace</div>
+      <a href="dashboard.html" class="side-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+        <span class="label">Dashboard</span>
+        <span class="badge">7</span>
+      </a>
+      <a href="jobs.html" class="side-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <span class="label">Job Search</span>
+        <span class="badge">147</span>
+      </a>
+      <a href="applications.html" class="side-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span class="label">Applications</span>
+        <span class="badge">12</span>
+      </a>
+      <a href="resume.html" class="side-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+        <span class="label">Resume &amp; AI</span>
+      </a>
+      <a href="interview.html" class="side-link active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+        <span class="label">Interview</span>
+        <span class="badge">2</span>
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Insights</div>
+      <a href="#" class="side-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span class="label">Market Intel</span>
+      </a>
+      <a href="#" class="side-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span class="label">Messages</span>
+        <span class="badge">5</span>
+      </a>
+    </div>
+
+    <div class="sidebar-foot">
+      <a href="settings.html" class="side-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="label">Settings</span>
+      </a>
+      <a href="index.html" class="side-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span class="label">Sign out</span>
+      </a>
+      <div class="sidebar-user">
+        <div class="avatar">SC</div>
+        <div class="who">
+          <div class="name">Sarah Chen</div>
+          <small>Pro plan · Sarah@c...</small>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="app-topbar">
+      <div>
+        <div class="crumbs">
+          <a href="dashboard.html">Workspace</a>
+          <span class="sep">/</span>
+          <span class="here">Interview</span>
+        </div>
+        <h1 class="mt-8">Stripe · Recruiter screen · Tomorrow 10:00 AM</h1>
+      </div>
+      <div class="searchbox">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input placeholder="Search interview prep…">
+        <span class="kbd">⌘K</span>
+      </div>
+      <button class="icon-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="ind"></span>
+      </button>
+      <button class="btn btn-primary btn-sm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Start practice
+      </button>
+    </div>
+
+    <div class="page">
+      <div class="app-detail-grid">
+        <div class="stack-lg">
+          <!-- Live copilot -->
+          <div class="live-card card" style="padding: 24px;">
+            <div class="row spread mb-16">
+              <div class="row gap-8">
+                <span class="live-dot"></span>
+                <strong>Live copilot · ready in 32 minutes</strong>
+              </div>
+              <span class="chip chip-ok"><span class="chip-dot"></span> Listening</span>
+            </div>
+            <div class="stack" style="gap: 12px;">
+              <div class="card" style="background: var(--bg-1); padding: 14px; border-color: var(--line-1);">
+                <div class="row spread mb-8" style="margin-bottom: 8px;">
+                  <div class="text-xs text-muted mono">2:14 PM</div>
+                  <span class="chip chip-info" style="font-size: 10px;">Q detected</span>
+                </div>
+                <div class="text-sm" style="font-style: italic; color: var(--text-2); font-family: var(--font-display);">"Walk me through a time you drove a metric that mattered to the business."</div>
+              </div>
+              <div class="card" style="background: radial-gradient(circle at 0% 50%, rgba(232, 148, 56, 0.12), transparent 60%), var(--bg-1); padding: 16px; border-color: var(--brand-500); box-shadow: 0 0 0 1px var(--brand-500), 0 0 32px rgba(232, 148, 56, 0.15);">
+                <div class="row spread mb-8" style="margin-bottom: 8px;">
+                  <div class="text-xs mono" style="color: var(--brand-300); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600;">Copilot suggests</div>
+                  <span class="chip chip-accent" style="font-size: 10px;">High match</span>
+                </div>
+                <div class="text-sm" style="line-height: 1.6;">
+                  Open with <strong style="color: var(--brand-300);">Klarna SMB activation</strong>. Use the 47% conversion lift as the headline.<br><br>
+                  <strong>Frame (90s):</strong> "At Klarna, I owned the SMB activation funnel — 12k merchants, declining self-serve conversion."<br>
+                  <strong>Action:</strong> "Ran 14 experiments/Q. Largest unlock was redesigning onboarding for first-time merchants, specifically the verification step."<br>
+                  <strong>Result:</strong> "47% YoY conversion lift, attributable to that redesign."<br>
+                  <strong>Why Stripe:</strong> Connect to PLG motion in Atlas — they've cited similar challenges publicly.
+                </div>
+              </div>
+              <div class="row gap-8">
+                <button class="btn btn-ghost btn-sm" style="flex: 1;">Show next question</button>
+                <button class="btn btn-ghost btn-sm" style="flex: 1;">Reveal playbook</button>
+                <button class="btn btn-quiet btn-sm">Mute coach voice</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Predicted questions -->
+          <div class="card" style="padding: 24px;">
+            <div class="section-head">
+              <div>
+                <h3>Predicted questions</h3>
+                <p>Based on Stripe's hiring patterns and this role</p>
+              </div>
+              <span class="chip chip-brand">12 questions</span>
+            </div>
+            <div class="stack" style="gap: 8px;">
+              <div class="faq-item" style="border: 1px solid var(--line-2); border-radius: 12px; padding: 0;">
+                <button class="faq-q" style="padding: 14px 18px;">Walk me through a time you drove a metric that mattered to the business.</button>
+                <div class="faq-a" style="padding: 0 18px;">
+                  <div class="text-sm" style="color: var(--text-2); line-height: 1.6; padding-bottom: 14px;">
+                    Open with Klarna SMB activation (47% conversion). Frame the metric, the experiments, the result, the lesson. 90 seconds. <span class="chip chip-accent" style="font-size: 10px; margin-left: 6px;">Prepared</span>
+                  </div>
+                </div>
+              </div>
+              <div class="faq-item" style="border: 1px solid var(--line-2); border-radius: 12px; padding: 0;">
+                <button class="faq-q" style="padding: 14px 18px;">Why Stripe? Why Growth specifically?</button>
+                <div class="faq-a" style="padding: 0 18px;">
+                  <div class="text-sm" style="color: var(--text-2); line-height: 1.6; padding-bottom: 14px;">
+                    Mention the Atlas PLG shift. Their recent post on dev experience caught your eye. Connect your payment-tools background to where they're headed. <span class="chip chip-accent" style="font-size: 10px; margin-left: 6px;">Prepared</span>
+                  </div>
+                </div>
+              </div>
+              <div class="faq-item" style="border: 1px solid var(--line-2); border-radius: 12px; padding: 0;">
+                <button class="faq-q" style="padding: 14px 18px;">Tell me about a product you killed and why.</button>
+                <div class="faq-a" style="padding: 0 18px;">
+                  <div class="text-sm" style="color: var(--text-2); line-height: 1.6; padding-bottom: 14px;">
+                    Use the Notion "Workflows v1" case study. We kept shipping features when data showed 4% adoption. Killed it, learned to instrument earlier. <span class="chip chip-accent" style="font-size: 10px; margin-left: 6px;">Prepared</span>
+                  </div>
+                </div>
+              </div>
+              <div class="faq-item" style="border: 1px solid var(--line-2); border-radius: 12px; padding: 0;">
+                <button class="faq-q" style="padding: 14px 18px;">How do you handle conflict with engineering on prioritization?</button>
+                <div class="faq-a" style="padding: 0 18px;">
+                  <div class="text-sm" style="color: var(--text-2); line-height: 1.6; padding-bottom: 14px;">
+                    Concrete example: Klarna fraud-vs-growth debate. Settled it with shared OKR, not a meeting. <span class="chip chip-warn" style="font-size: 10px; margin-left: 6px;">Needs polish</span>
+                  </div>
+                </div>
+              </div>
+              <div class="faq-item" style="border: 1px solid var(--line-2); border-radius: 12px; padding: 0;">
+                <button class="faq-q" style="padding: 14px 18px;">What's your biggest weakness as a PM?</button>
+                <div class="faq-a" style="padding: 0 18px;">
+                  <div class="text-sm" style="color: var(--text-2); line-height: 1.6; padding-bottom: 14px;">
+                    "I over-index on quantitative signals early. I've trained myself to schedule 3 customer calls before any data-driven decision." Real, specific, growth-edge. <span class="chip chip-accent" style="font-size: 10px; margin-left: 6px;">Prepared</span>
+                  </div>
+                </div>
+              </div>
+              <div style="text-align: center; padding: 8px;">
+                <button class="btn btn-quiet btn-sm">Show 7 more questions</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Company brief -->
+          <div class="card" style="padding: 24px;">
+            <div class="section-head">
+              <div>
+                <h3>Company brief · Stripe</h3>
+                <p>Generated from public sources, updated daily</p>
+              </div>
+            </div>
+            <div class="grid-3">
+              <div>
+                <div class="text-xs text-muted" style="text-transform:uppercase; letter-spacing:0.1em; font-weight:600;">Founded</div>
+                <div class="mono" style="font-size:22px;font-weight:600;font-family: var(--font-display); font-style: italic; background: linear-gradient(180deg, #fcd28a, #d97a1e); -webkit-background-clip: text; color: transparent;">2010</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted" style="text-transform:uppercase; letter-spacing:0.1em; font-weight:600;">Headcount</div>
+                <div class="mono" style="font-size:22px;font-weight:600;font-family: var(--font-display); font-style: italic; background: linear-gradient(180deg, #fcd28a, #d97a1e); -webkit-background-clip: text; color: transparent;">~8,000</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted" style="text-transform:uppercase; letter-spacing:0.1em; font-weight:600;">Last round</div>
+                <div class="mono" style="font-size:22px;font-weight:600;font-family: var(--font-display); font-style: italic; background: linear-gradient(180deg, #fcd28a, #d97a1e); -webkit-background-clip: text; color: transparent;">$95B val.</div>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div>
+              <div class="text-sm" style="font-weight:500; margin-bottom: 12px;">What's happening (last 30d)</div>
+              <div class="stack" style="gap: 10px;">
+                <div class="text-sm text-dim" style="display: flex; gap: 10px;"><span style="color: var(--brand-300); font-family: var(--font-display); font-style: italic;">→</span> Launched Stripe Capital for SaaS, expanding beyond e-commerce</div>
+                <div class="text-sm text-dim" style="display: flex; gap: 10px;"><span style="color: var(--brand-300); font-family: var(--font-display); font-style: italic;">→</span> Hired 12 PMs across Growth and Platform in Q1</div>
+                <div class="text-sm text-dim" style="display: flex; gap: 10px;"><span style="color: var(--brand-300); font-family: var(--font-display); font-style: italic;">→</span> Acquired Authy competitor (rumored) — focus on identity</div>
+                <div class="text-sm text-dim" style="display: flex; gap: 10px;"><span style="color: var(--brand-300); font-family: var(--font-display); font-style: italic;">→</span> Engineering blog post on "the next decade of payments"</div>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div>
+              <div class="text-sm" style="font-weight:500; margin-bottom: 12px;">Insider tips for this team</div>
+              <div class="stack" style="gap: 8px;">
+                <div class="text-sm text-dim">• Growth team reports to VP Sarah Patel (your interviewer is on her team)</div>
+                <div class="text-sm text-dim">• Team works in 2-week sprints, no big-bang launches</div>
+                <div class="text-sm text-dim">• "Data-informed, not data-driven" — show you have a thesis</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stack-lg">
+          <div class="card" style="padding: 24px;">
+            <div class="section-head">
+              <div>
+                <h3>Upcoming interviews</h3>
+              </div>
+            </div>
+            <div class="stack" style="gap: 12px;">
+              <div class="card" style="padding: 16px; background: radial-gradient(circle at 0% 50%, rgba(232, 148, 56, 0.10), transparent 50%), var(--bg-3); border-color: var(--brand-500); box-shadow: 0 0 0 1px var(--brand-500), 0 0 24px rgba(232, 148, 56, 0.15);">
+                <div class="row spread mb-8">
+                  <div class="row gap-8">
+                    <div class="job-logo" style="width:36px;height:36px;font-size:12px;background: linear-gradient(135deg, #635bff, #4f63ff);">S</div>
+                    <div>
+                      <div class="text-sm" style="font-weight:500;">Stripe · Recruiter screen</div>
+                      <div class="text-xs text-muted">Sarah Patel · 30 min</div>
+                    </div>
+                  </div>
+                  <span class="chip chip-info">Tomorrow</span>
+                </div>
+                <div class="text-sm text-dim">Tuesday · 10:00 AM · Zoom</div>
+                <div class="row gap-8 mt-16" style="margin-top: 12px;">
+                  <button class="btn btn-primary btn-sm" style="flex:1;">Open prep</button>
+                  <button class="btn btn-ghost btn-sm">Reschedule</button>
+                </div>
+              </div>
+              <div class="up-item">
+                <div class="up-time"><div class="up-day">THU</div><div class="up-num">19</div></div>
+                <div style="flex:1;min-width:0;">
+                  <div class="text-sm" style="font-weight:500;">Linear · Hiring manager</div>
+                  <div class="text-xs text-muted mt-8" style="margin-top:2px;">Tuomas Artman · 45 min</div>
+                </div>
+                <span class="chip chip-warn">Prep 60%</span>
+              </div>
+              <div class="up-item">
+                <div class="up-time">
+                  <div class="up-day">MON</div>
+                  <div class="up-num">23</div>
+                  <div class="up-dot" style="background: #a9e631;"></div>
+                </div>
+                <div style="flex:1;min-width:0;">
+                  <div class="text-sm" style="font-weight:500;">Vercel · Onsite (final)</div>
+                  <div class="text-xs text-muted mt-8" style="margin-top:2px;">5 rounds · SF or remote</div>
+                </div>
+                <span class="chip chip-accent">Onsite</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="padding: 24px;">
+            <div class="section-head">
+              <div>
+                <h3>Past debriefs</h3>
+                <p>What worked, what didn't</p>
+              </div>
+            </div>
+            <div class="stack" style="gap: 16px;">
+              <div>
+                <div class="row spread text-sm">
+                  <div class="row gap-8">
+                    <div class="job-logo" style="width:24px;height:24px;font-size:9px;background: linear-gradient(135deg, #a259ff, #6e3aff);">F</div>
+                    <strong>Figma · PM screen</strong>
+                  </div>
+                  <span class="chip chip-ok" style="font-size: 10px;">Moved on</span>
+                </div>
+                <div class="text-xs text-muted mt-8" style="margin-top:4px;">3 days ago · 32 min</div>
+                <div class="text-sm text-dim mt-8" style="margin-top:6px; line-height: 1.5;">"Strong on systems thinking. Could've been tighter on 'why Figma' — interviewer asked twice. Next time: lead with the 2019 redesign story."</div>
+              </div>
+              <div>
+                <div class="row spread text-sm">
+                  <div class="row gap-8">
+                    <div class="job-logo" style="width:24px;height:24px;font-size:9px;background: linear-gradient(135deg, #ff7a45, #d4380d);">A</div>
+                    <strong>Airbnb · PM screen</strong>
+                  </div>
+                  <span class="chip chip-err" style="font-size: 10px;">Rejected</span>
+                </div>
+                <div class="text-xs text-muted mt-8" style="margin-top:4px;">1 week ago · 28 min</div>
+                <div class="text-sm text-dim mt-8" style="margin-top:6px; line-height: 1.5;">"Mismatch on vision: I pitched B2B-style metrics, they wanted marketplace expertise. AI flagged 3 jargon mismatches. Better screening next time."</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="padding: 24px; background: radial-gradient(circle at 50% 0%, rgba(232, 148, 56, 0.10), transparent 60%), var(--bg-2);">
+            <div class="row gap-8 mb-8">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brand-300)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <strong style="font-size: 14px; font-family: var(--font-display); font-style: italic;">Pro tip</strong>
+            </div>
+            <p class="text-sm text-dim" style="line-height: 1.6;">Stripe interviewers value <strong>structured ambiguity</strong> — show how you reduce it, don't pretend it doesn't exist. Open with "what I know, what I'm guessing, what I'd need to know."</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast-stack" id="toastStack"></div>
+<script src="js/main.js"></script>
+</body>
+</html>

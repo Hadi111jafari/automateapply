@@ -1,4 +1,4 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+AutomateApply is a Next.js MVP for authenticated job discovery, resume tailoring, and a review-only application tracker.
 
 ## Getting Started
 
@@ -15,6 +15,14 @@ bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+## Local setup
+
+1. Configure `NEXT_PUBLIC_SUPABASE_URL` and either `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` or `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local`.
+2. Run [`supabase/schema.sql`](./supabase/schema.sql) in the Supabase SQL editor. It creates the data tables, RLS policies, and private `resumes` bucket.
+3. Configure an OpenAI-compatible AI provider. OpenRouter works by setting `OPENROUTER_BASE_URL=https://openrouter.ai/api/v1` and `OPENROUTER_API_KEY`; optionally set `AI_MODEL` to an available free model. Together is used as a fallback when configured.
+
+Jobs are loaded from Jobicy’s no-key remote-jobs API. “Add to review” records a job in your private tracker; it does not submit anything to a third-party job board.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

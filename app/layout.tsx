@@ -3,6 +3,7 @@ import { Fraunces, JetBrains_Mono, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import './landing.css';
 import { Providers } from '@/components/providers';
+import { SonnerToaster } from '@/components/sonner-provider';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: '--font-plus-jakarta-sans',
@@ -41,6 +42,7 @@ export default function RootLayout({
     >
       <body>
         <Providers>{children}</Providers>
+        <SonnerToaster />
       </body>
     </html>
   );

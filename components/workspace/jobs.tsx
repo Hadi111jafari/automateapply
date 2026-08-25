@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ExternalLink, Filter, LoaderCircle, RotateCcw } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { apiFetch } from '@/lib/api-client';
 import { toast } from 'sonner';
 import { useDemoMode } from '@/lib/demo-mode';
@@ -87,6 +87,13 @@ type JobsCachePayload = {
 // visit. An explicit Search or Reset always fetches fresh and rewrites this.
 const JOBS_CACHE_TTL = 5 * 60 * 1000;
 let jobsCache: JobsCachePayload | null = null;
+
+// Both providers live behind external networks, so a momentary connection
+// blip can fail every source at once. Retry the initial load quietly once
+// before surfacing an error; the prefix matches the API's all-sources-down
+// message from app/api/jobs/route.ts.
+const JOBS_RETRY_DELAY_MS = 1_000;
+const ALL_SOURCES_DOWN_PREFIX = 'No job source could be reached';
 
 function readJobsCache(query: string): JobsCachePayload | null {
   if (
@@ -252,12 +259,22 @@ export function Jobs() {
   const [notice, setNotice] = useState<string>();
   const [moreOpen, setMoreOpen] = useState(false);
   const [matchTab, setMatchTab] = useState<MatchTab>('all');
+  // StrictMode runs mount effects twice in dev; remember the query the mount
+  // effect already loaded so providers are not hit twice per page view.
+  const autoLoadedQuery = useRef<string | null>(null);
+  // Non-null while a silent retry of a failed initial load is scheduled.
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadJobs = async (
     nextQuery: string,
     nextFilters: Filters,
     useDefaults = false,
+    allowRetry = useDefaults,
   ) => {
+    if (retryTimer.current) {
+      clearTimeout(retryTimer.current);
+      retryTimer.current = null;
+    }
     setLoading(true);
     setError(undefined);
     setNotice(undefined);
@@ -367,11 +384,19 @@ export function Jobs() {
       const message =
         cause instanceof Error ? cause.message : 'Could not load jobs.';
       console.error('Jobs load error:', cause);
+      if (allowRetry && message.startsWith(ALL_SOURCES_DOWN_PREFIX)) {
+        retryTimer.current = setTimeout(() => {
+          retryTimer.current = null;
+          void loadJobs(nextQuery, nextFilters, useDefaults, false);
+        }, JOBS_RETRY_DELAY_MS);
+        return;
+      }
       toast.error(message);
       setJobs([]);
       setError(message);
     } finally {
-      setLoading(false);
+      // A retry is about to run; keep showing the loading state until then.
+      if (!retryTimer.current) setLoading(false);
     }
   };
 
@@ -422,6 +447,8 @@ export function Jobs() {
       }, 0);
       return;
     }
+    if (autoLoadedQuery.current === urlQuery) return;
+    autoLoadedQuery.current = urlQuery;
     const cached = readJobsCache(urlQuery);
     window.setTimeout(() => {
       setQuery(urlQuery);

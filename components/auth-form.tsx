@@ -2,9 +2,10 @@
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { endDemoMode, startDemoMode } from '@/lib/demo-mode';
+import { describeAuthError } from '@/lib/auth-errors';
 export function AuthForm() {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
-  const [error, setError] = useState<string>();
+  const [error, setError] = useState<{ message: string; transient: boolean }>();
   const [notice, setNotice] = useState<string>();
   const [pending, setPending] = useState(false);
   const router = useRouter();
@@ -13,33 +14,48 @@ export function AuthForm() {
     setError(undefined);
     setNotice(undefined);
     setPending(true);
-    const data = new FormData(event.currentTarget);
-    const credentials = {
-      email: String(data.get('email')),
-      password: String(data.get('password')),
-    };
-    const endpoint =
-      mode === 'signin' ? '/api/auth/signin' : '/api/auth/signup';
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(credentials),
-    });
-    setPending(false);
-    const payload = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      setError(payload?.error ?? 'Authentication failed');
-      return;
+    try {
+      const data = new FormData(event.currentTarget);
+      const credentials = {
+        email: String(data.get('email')),
+        password: String(data.get('password')),
+      };
+      const endpoint =
+        mode === 'signin' ? '/api/auth/signin' : '/api/auth/signup';
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setPending(false);
+        // The API already maps known causes, but map again here so nothing
+        // raw can slip through (own fetch failure, proxy error pages, …).
+        const view = describeAuthError(payload?.error);
+        setError({ message: view.message, transient: view.kind === 'transient' || view.kind === 'rate-limit' });
+        return;
+      }
+      // For signups that require email confirmation `payload.session` may be
+      // null — keep demo mode active in that case.
+      if (mode === 'signin' || payload?.session) await endDemoMode();
+      if (mode === 'signup' && !payload.session) {
+        setPending(false);
+        setNotice('Check your inbox to confirm your email, then sign in.');
+        return;
+      }
+      // Stay on “Please wait…” until /dashboard finishes loading; the
+      // navigation itself unmounts this form. replace() already fetches a
+      // fresh render with the new session cookies, so no extra refresh.
+      router.replace('/dashboard');
+    } catch {
+      setPending(false);
+      setError({
+        message:
+          "We couldn't reach the sign-in service just now. Check your connection and try again.",
+        transient: true,
+      });
     }
-    // For signups that require email confirmation `payload.session` may be
-    // null — keep demo mode active in that case.
-    if (mode === 'signin' || payload?.session) await endDemoMode();
-    if (mode === 'signup' && !payload.session) {
-      setNotice('Check your inbox to confirm your email, then sign in.');
-      return;
-    }
-    router.replace('/dashboard');
-    router.refresh();
   }
   return (
     <form onSubmit={submit} className="panel mx-auto w-full max-w-md p-7">
@@ -73,7 +89,17 @@ export function AuthForm() {
           className="mt-2 h-11 w-full rounded-xl border border-border bg-[#171512] px-3 outline-none focus:border-[#e68b18]"
         />
       </label>
-      {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+      {error && (
+        <p
+          role="alert"
+          className={`mt-3 text-sm ${
+            // Red means "you can fix this input"; amber means "retry shortly".
+            error.transient ? 'text-amber-300' : 'text-red-400'
+          }`}
+        >
+          {error.message}
+        </p>
+      )}
       {notice && <p className="mt-3 text-sm text-green-400">{notice}</p>}
       <button
         disabled={pending}

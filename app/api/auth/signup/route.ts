@@ -1,5 +1,7 @@
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
+import { isAuthRetryableFetchError } from '@supabase/supabase-js';
+import { describeAuthError } from '@/lib/auth-errors';
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -23,6 +25,12 @@ export async function POST(request: Request) {
   });
 
   const { data, error } = await supabase.auth.signUp({ email, password });
-  if (error) return Response.json({ error: error.message }, { status: 400 });
+  if (error) {
+    console.warn('[auth/signup] rejected:', error.message);
+    const view = describeAuthError(error.message);
+    const retryable =
+      view.kind === 'transient' || isAuthRetryableFetchError(error);
+    return Response.json({ error: view.message, kind: view.kind }, { status: retryable ? 503 : 400 });
+  }
   return Response.json({ user: data.user, session: data.session });
 }

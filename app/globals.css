@@ -292,6 +292,27 @@ h4 {
   box-shadow: var(--amber-shadow-card);
 }
 
+/* Settings section nav: pinned below the sticky header on mobile; vertically
+   centered in the viewport on desktop (overrides .panel's overflow so it can
+   scroll internally when taller than the viewport). Declared after .panel so
+   it wins the cascade. */
+.settings-nav {
+  position: sticky;
+  z-index: 20;
+  top: 86px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+@media (min-width: 1024px) {
+  .settings-nav {
+    top: 50%;
+    transform: translateY(-50%);
+    max-height: calc(100vh - 130px);
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+}
+
 .amber-card::before,
 .panel::before {
   content: "";
@@ -2103,7 +2124,7 @@ h4 {
 }
 
 .jobs-search-form {
-  align-items: end;
+  align-items: center;
 }
 
 .jobs-field {
@@ -2116,8 +2137,7 @@ h4 {
   text-transform: uppercase;
 }
 
-.jobs-field .jobs-query-input,
-.jobs-location-input {
+.jobs-field .jobs-query-input {
   min-width: 210px;
   border: 1px solid var(--amber-line-2);
   border-radius: var(--amber-radius-md);
@@ -2128,10 +2148,6 @@ h4 {
   font-weight: 400;
   letter-spacing: normal;
   text-transform: none;
-}
-
-.jobs-location-input {
-  width: 210px;
 }
 
 .jobs-field input:focus,
@@ -2722,7 +2738,6 @@ h4 {
   }
 
   .jobs-query-input,
-  .jobs-location-input,
   .jobs-field,
   .jobs-filter-group,
   .jobs-more-filters,
@@ -2755,4 +2770,18 @@ h4 {
   .jobs-job-meta {
     gap: 6px;
   }
+}
+
+/* Disabled / coming-soon controls: never look actionable. */
+button:disabled,
+a[aria-disabled='true'] {
+  opacity: 0.45;
+  filter: grayscale(0.6);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+button:disabled:hover,
+a[aria-disabled='true']:hover {
+  filter: grayscale(0.6);
 }

@@ -80,11 +80,11 @@ Acceptance: creating or moving an application immediately changes Applications a
 
 ## P1 — required product honesty and quality
 
-- [ ] Disable/overlay all non-core demo controls for real accounts: Interview, Market Intel, Messages, integrations, billing, exports, account deletion, notifications, and any unfinished view/filter.
-- [ ] Ensure every disabled control explains “Coming soon” or grayed out look like disabled and does not mutate local or remote state.
-- [ ] Add global loading, empty, and error states for authenticated data views.
-- [ ] Update README with environment variables, Supabase migration order, demo behavior, local setup, and manual QA steps.
-- [ ] Remove unused/dead code only after its replacement is functioning.
+- [x] Disable/overlay all non-core demo controls for real accounts: Interview, Market Intel, Messages, integrations, billing, exports, account deletion, notifications, and any unfinished view/filter. *(Market Intel/Messages/notifications/PDF download/Delete/Grid-Map grayed with "Coming soon" tooltips; CSV + JSON exports made real; fabricated billing/profile pills commented out.)*
+- [x] Ensure every disabled control explains “Coming soon” or grayed out look like disabled and does not mutate local or remote state. *(Global `button:disabled` style in globals.css; ComingSoon overlay is pointer-events-none.)*
+- [x] Add global loading, empty, and error states for authenticated data views. *(Dashboard/Applications/Jobs/Resume already had them; Settings profile rows now show Loading… until the profile resolves.)*
+- [x] Update README with environment variables, Supabase migration order, demo behavior, local setup, and manual QA steps.
+- [x] Remove unused/dead code only after its replacement is functioning. *(ChevronLink removed; demo-only data arrays retained for demo mode.)*
 
 ## P1 — manual launch verification
 
@@ -111,3 +111,4 @@ Acceptance: creating or moving an application immediately changes Applications a
 | 2026-08-22 | P0.5 job discovery and review queue | [~] | Added submitted Jobicy search, loading/empty/retry states, upstream timeout handling, durable review-queue saves, original-listing handoff, manual Mark applied, and disabled Auto-apply/unfinished filters. |
 | 2026-08-24 | P0.5 search and matching correction | [~] | Replaced placeholder Jobicy-only behavior with verified Jobicy + Himalayas backend search; added normalized/deduplicated results, profile/resume-based explainable scoring, working quick/advanced filters, functional All/90%+/80%+/Saved controls, and staged card actions. Manual browser acceptance remains. |
 | 2026-08-25 | P0.6 Applications & Dashboard real-data | [~] | Kanban columns/chips/summary/table now derive from Supabase records; fixed stage mapping (technical → final), added reject/restore with persisted PATCH; real dashboard stats/pipeline/activity/next actions replace placeholder; fabricated widgets (live run, market intel, upcoming) hidden for real accounts; demo mode unchanged. API-level verification passed; manual browser acceptance remains. |
+| 2026-08-25 | P1 product honesty implementation | [x] | Dead controls either made real (applications CSV export, full-account JSON export, ⌘K focus, real sidebar counts, real avatar initials, settings nav active state) or disabled with Coming-soon tooltips (Market Intel, Messages, bell, PDF download, Delete, Grid/Map); fabricated billing/profile content commented out; global disabled styling added; README rewritten; settings nav pinned below header. Manual browser acceptance remains. |

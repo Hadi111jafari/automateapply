@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { apiFetch } from '@/lib/api-client';
 import { useProfile } from '@/lib/use-profile';
+import { initialsOf } from './workspace-shell';
 import { ComingSoon } from './coming-soon';
 
 const sections = [
@@ -66,7 +67,9 @@ function Toggle({ value, onChange }: { value: boolean; onChange: () => void }) {
 }
 
 export function Settings() {
-  const { demoMode, profile: savedProfile, email, setProfile: setSavedProfile } = useProfile();
+  const { demoMode, profile: savedProfile, email, loading: profileLoading, setProfile: setSavedProfile } = useProfile();
+  const [activeSection, setActiveSection] = useState(0);
+  const [exporting, setExporting] = useState(false);
   const [stealthOverride, setStealthOverride] = useState<boolean | null>(null);
   const [anonymousOverride, setAnonymousOverride] = useState<boolean | null>(null);
   const [thresholdOverride, setThresholdOverride] = useState<number | null>(null);
@@ -91,6 +94,43 @@ export function Settings() {
     const result = await apiFetch<{ profile: NonNullable<typeof savedProfile> }>('/api/profile', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fullName: current.fullName, headline: current.headline, phone: current.phone, linkedin: current.linkedin, currentEmployer: current.currentEmployer, targetRoles: current.targetRoles.split(',').map((item) => item.trim()).filter(Boolean), locations: current.locations.split(',').map((item) => item.trim()).filter(Boolean), minimumSalary: current.minimumSalary ? Number(current.minimumSalary.replace(/[^0-9]/g, '')) : null, autoApplyThreshold: preferences.threshold, stealth: preferences.stealth, anonymousApplications: preferences.anonymous }) });
     setSavedProfile(result.profile);
   };
+  const exportAccountData = async () => {
+    setExporting(true);
+    setProfileError(undefined);
+    try {
+      const [profileData, applicationData, materialData, resumeData] =
+        await Promise.all([
+          apiFetch<{ profile: unknown }>('/api/profile'),
+          apiFetch<{ applications: unknown }>('/api/applications'),
+          apiFetch<{ materials: unknown }>('/api/materials'),
+          apiFetch<{ resumes: unknown }>('/api/resumes'),
+        ]);
+      const bundle = {
+        exported_at: new Date().toISOString(),
+        profile: profileData.profile,
+        applications: applicationData.applications,
+        materials: materialData.materials,
+        resumes: resumeData.resumes,
+      };
+      const url = URL.createObjectURL(
+        new Blob([JSON.stringify(bundle, null, 2)], {
+          type: 'application/json',
+        }),
+      );
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'automateapply-data.json';
+      link.click();
+      URL.revokeObjectURL(url);
+      setNotice('Your data export was downloaded.');
+    } catch (cause) {
+      setProfileError(
+        cause instanceof Error ? cause.message : 'Could not export your data.',
+      );
+    } finally {
+      setExporting(false);
+    }
+  };
   const saveProfile = async () => {
     if (!profile.fullName.trim()) { setProfileError('Name is required.'); return; }
     setSaving(true); setProfileError(undefined);
@@ -105,13 +145,14 @@ export function Settings() {
     <div className="mx-auto grid max-w-[1160px] gap-5 lg:grid-cols-[190px_minmax(0,1fr)]">
       <nav
         aria-label="Settings sections"
-        className="panel flex h-fit gap-1 overflow-x-auto p-2 lg:sticky lg:top-[106px] lg:flex-col"
+        className="panel settings-nav flex h-fit gap-1 p-2 lg:flex-col"
       >
         {sections.map((section, index) => (
           <a
             key={section}
             href={`#${['profile', 'search', 'autoapply', 'integrations', 'billing', 'privacy'][index]}`}
-            className={`shrink-0 rounded-lg px-3 py-2.5 text-sm transition ${index === 0 ? 'bg-[#30251a] text-[#f3a133]' : 'text-muted-foreground hover:bg-[#25221e] hover:text-[#f4eadf]'}`}
+            onClick={() => setActiveSection(index)}
+            className={`shrink-0 rounded-lg px-3 py-2.5 text-sm transition ${activeSection === index ? 'bg-[#30251a] text-[#f3a133]' : 'text-muted-foreground hover:bg-[#25221e] hover:text-[#f4eadf]'}`}
           >
             {section}
           </a>
@@ -125,15 +166,22 @@ export function Settings() {
         >
           <div className="mt-6 flex flex-wrap items-center gap-4">
             <div className="grid size-[72px] place-items-center rounded-full bg-gradient-to-br from-[#ffbe65] to-[#b45a02] text-2xl font-bold text-black">
-              SC
+              {demoMode ? 'SC' : initialsOf(savedProfile?.full_name ?? '', email)}
             </div>
             <div className="min-w-[220px] flex-1">
               <h3 className="display text-2xl font-bold">{shownName}</h3>
               <p className="text-sm text-muted-foreground">
                 {shownHeadline}
               </p>
-              <span className="pill green mt-2">Visible to recruiters</span>{' '}
-              <span className="pill">Public profile</span>
+              {/* Real privacy states from your settings; the previous
+                  "Visible to recruiters" / "Public profile" pills were
+                  fabricated and removed. */}
+              <span className={`pill mt-2 ${stealth ? 'green' : 'red'}`}>
+                Stealth mode {stealth ? 'on' : 'off'}
+              </span>{' '}
+              <span className={`pill ${anonymous ? 'green' : ''}`}>
+                Anonymous applications {anonymous ? 'on' : 'off'}
+              </span>
             </div>
             <button onClick={() => { setProfile({ fullName: savedProfile?.full_name ?? '', headline: savedProfile?.headline ?? '', phone: savedProfile?.phone ?? '', linkedin: savedProfile?.linkedin ?? '', currentEmployer: savedProfile?.current_employer ?? '', targetRoles: '', locations: '', minimumSalary: '' }); setEditing(true); }} className="ghost-button px-4 py-2 text-sm">Edit</button>
           </div>
@@ -142,18 +190,38 @@ export function Settings() {
               [
                 'Email',
                 'Used for job alerts and recruiter replies',
-                demoMode ? 'sarah.chen@gmail.com' : email || 'No email available',
+                demoMode
+                  ? 'sarah.chen@gmail.com'
+                  : profileLoading
+                    ? 'Loading…'
+                    : email || 'No email available',
               ],
-              ['Phone', 'For interview SMS reminders', demoMode ? '+1 (415) 555-0182' : savedProfile?.phone || 'Not set'],
+              [
+                'Phone',
+                'For interview SMS reminders',
+                demoMode
+                  ? '+1 (415) 555-0182'
+                  : profileLoading
+                    ? 'Loading…'
+                    : savedProfile?.phone || 'Not set',
+              ],
               [
                 'LinkedIn',
                 'Used to enrich your profile',
-                demoMode ? 'linkedin.com/in/sarahchen' : savedProfile?.linkedin || 'Not set',
+                demoMode
+                  ? 'linkedin.com/in/sarahchen'
+                  : profileLoading
+                    ? 'Loading…'
+                    : savedProfile?.linkedin || 'Not set',
               ],
               [
                 'Current employer',
                 'Hidden from your search by default',
-                demoMode ? 'Klarna · stealth on' : savedProfile?.current_employer || 'Not set',
+                demoMode
+                  ? 'Klarna · stealth on'
+                  : profileLoading
+                    ? 'Loading…'
+                    : savedProfile?.current_employer || 'Not set',
               ],
             ].map(([name, desc, value]) => (
               <Row key={name} name={name} desc={desc}>
@@ -199,12 +267,18 @@ export function Settings() {
                 disabled={demoMode}
               />
             </Row>
-            <Row name="Deal-breakers" desc="Skip any job matching these">
-              <div className="flex flex-wrap gap-2">
-                <span className="pill red">Recruiting agencies</span>
-                <span className="pill red">Series A</span>
-                <span className="pill red">On-call</span>
-              </div>
+            <Row
+              name="Deal-breakers"
+              desc="Skip any job matching these — arriving in a future update"
+            >
+              {/* No backend storage yet; shown as a disabled preview. */}
+              <ComingSoon>
+                <div className="flex flex-wrap gap-2">
+                  <span className="pill red">Recruiting agencies</span>
+                  <span className="pill red">Series A</span>
+                  <span className="pill red">On-call</span>
+                </div>
+              </ComingSoon>
             </Row>
             {!demoMode && <button type="button" onClick={() => { void persist(searchValues).then(() => { setSearchDraft({ targetRoles: '', locations: '', minimumSalary: '' }); setNotice('Search preferences saved.'); }).catch((cause: unknown) => setProfileError(cause instanceof Error ? cause.message : 'Could not save preferences.')); }} className="amber-button mt-5 px-4 py-2 text-sm">Save search preferences</button>}
           </div>
@@ -321,7 +395,9 @@ export function Settings() {
         <Section
           id="billing"
           title="Billing & plan"
-          subtitle="You’re on Pro · $79/mo · renews Apr 14"
+          // Fabricated launch copy kept for reference:
+          // "You're on Pro · $79/mo · renews Apr 14"
+          subtitle="Billing is not active during the beta — nothing is charged today"
         >
           <ComingSoon><div className="mt-5">
             {[
@@ -360,17 +436,27 @@ export function Settings() {
             </Row>
             <Row
               name="Export your data"
-              desc="Download everything we have on you"
+              desc="Download everything we have on you as JSON"
             >
-              <button className="ghost-button px-4 py-2 text-sm">
-                Request export
+              <button
+                type="button"
+                onClick={() => void exportAccountData()}
+                disabled={exporting || demoMode}
+                title={demoMode ? 'Not available in the demo' : undefined}
+                className="ghost-button px-4 py-2 text-sm"
+              >
+                {exporting ? 'Preparing…' : 'Request export'}
               </button>
             </Row>
             <Row
               name="Delete account"
               desc="Permanently remove your account and all data"
             >
-              <button className="text-sm text-red-400">Delete</button>
+              {/* Needs a server-side deletion flow (auth admin + storage
+                  cleanup); disabled so it can never look like it worked. */}
+              <button type="button" disabled title="Coming soon" className="text-sm text-red-400">
+                Delete
+              </button>
             </Row>
           </div>
         </Section>

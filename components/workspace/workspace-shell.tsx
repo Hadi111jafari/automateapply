@@ -6,7 +6,6 @@ import {
   Bell,
   BriefcaseBusiness,
   ChartNoAxesColumn,
-  ChevronRight,
   Download,
   FileText,
   Grid2X2,
@@ -21,7 +20,8 @@ import {
   Upload,
   X,
 } from 'lucide-react';
-import { useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { apiFetch } from '@/lib/api-client';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { endDemoMode, useDemoMode } from '@/lib/demo-mode';
 import { useProfile } from '@/lib/use-profile';
@@ -31,6 +31,19 @@ type SidebarItem = {
   label: string;
   icon: typeof Grid2X2;
   count?: string;
+  disabled?: boolean;
+};
+
+type ShellApplication = {
+  id: string;
+  company: string;
+  title: string;
+  stage: string;
+  match_score: number | null;
+  location: string;
+  source_url: string;
+  created_at: string;
+  updated_at: string;
 };
 
 const workspaceItems: SidebarItem[] = [
@@ -40,15 +53,28 @@ const workspaceItems: SidebarItem[] = [
   { href: '/resume', label: 'Resume & AI', icon: FileText },
   { href: '/interview', label: 'Interview', icon: Mic, count: '2' },
 ];
+// Non-core destinations stay visible for design fidelity but are disabled
+// until their features ship. They render grayed out with a "Coming soon"
+// tooltip instead of pretending to work.
 const insightItems: SidebarItem[] = [
-  { href: '#market-intel', label: 'Market Intel', icon: ChartNoAxesColumn },
-  { href: '#messages', label: 'Messages', icon: MessageSquare, count: '5' },
+  { href: '#market-intel', label: 'Market Intel', icon: ChartNoAxesColumn, disabled: true },
+  { href: '#messages', label: 'Messages', icon: MessageSquare, count: '5', disabled: true },
 ];
 const settingsItems: SidebarItem[] = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 const routeItems = [...workspaceItems, settingsItems[0]];
 const sidebarPreferenceEvent = 'automateapply-sidebar-preference';
+
+export function initialsOf(name: string, fallbackEmail = '') {
+  const source = name.trim() || fallbackEmail.split('@')[0] || '';
+  const parts = source.split(/[\s._-]+/).filter(Boolean);
+  if (!parts.length) return 'AA';
+  return parts
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+}
 
 function subscribeToSidebarPreference(onStoreChange: () => void) {
   window.addEventListener(sidebarPreferenceEvent, onStoreChange);
@@ -108,7 +134,7 @@ function SidebarSection({
               >
                 {item.label}
               </span>
-              {item.count ? (
+              {item.count && !item.disabled ? (
                 <span
                   className={`ml-auto grid h-[18px] min-w-5 shrink-0 place-items-center rounded-full px-1.5 text-[10px] font-semibold leading-none ${selected ? 'bg-[linear-gradient(180deg,#e89438,#b85e0e)] text-[#1a1208] shadow-[0_0_8px_rgba(232,148,56,.55)]' : 'bg-[#252220] text-[#d6c5ad]'} ${collapsed ? 'md:absolute md:right-1 md:top-1 md:ml-0' : 'md:static'}`}
                 >
@@ -117,7 +143,12 @@ function SidebarSection({
               ) : null}
             </>
           );
-          const className = `relative flex h-[45px] w-full items-center gap-3 overflow-hidden rounded-[12px] px-3 py-[10px] text-[13px] font-medium leading-[20px] tracking-[-.005em] transition-[background,color,box-shadow] duration-200 ${collapsed ? 'md:justify-start md:px-3' : 'md:justify-start'} ${selected ? 'bg-[#1a1815] bg-[linear-gradient(90deg,rgba(232,148,56,.18),rgba(232,148,56,.04))] text-[#faf3e8] shadow-[inset_2px_0_0_#d97a1e,inset_0_0_0_1px_rgba(232,148,56,.2),0_0_16px_rgba(232,148,56,.18)]' : 'text-[#948370] hover:bg-[#252220] hover:text-[#faf3e8]'}`;
+          const stateClassName = item.disabled
+            ? 'text-[#5f564b]'
+            : selected
+              ? 'bg-[#1a1815] bg-[linear-gradient(90deg,rgba(232,148,56,.18),rgba(232,148,56,.04))] text-[#faf3e8] shadow-[inset_2px_0_0_#d97a1e,inset_0_0_0_1px_rgba(232,148,56,.2),0_0_16px_rgba(232,148,56,.18)]'
+              : 'text-[#948370] hover:bg-[#252220] hover:text-[#faf3e8]';
+          const className = `relative flex h-[45px] w-full items-center gap-3 overflow-hidden rounded-[12px] px-3 py-[10px] text-[13px] font-medium leading-[20px] tracking-[-.005em] transition-[background,color,box-shadow] duration-200 ${collapsed ? 'md:justify-start md:px-3' : 'md:justify-start'} ${stateClassName}`;
 
           if (item.href.startsWith('/')) {
             return (
@@ -138,8 +169,9 @@ function SidebarSection({
             <button
               key={item.href}
               type="button"
+              disabled={item.disabled}
+              title={item.disabled ? 'Coming soon' : collapsed ? item.label : undefined}
               onClick={onNavigate}
-              title={collapsed ? item.label : undefined}
               className={className}
             >
               {itemContent}
@@ -154,11 +186,85 @@ function SidebarSection({
 export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const demoMode = useDemoMode();
   const { profile, email } = useProfile();
-  const visibleWorkspaceItems = workspaceItems.map((item) => ({ ...item, count: demoMode ? item.count : undefined }));
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [quickJobQuery, setQuickJobQuery] = useState('');
+  const [applications, setApplications] = useState<ShellApplication[]>([]);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Real badge counts for real accounts; the amber demo keeps its static numbers.
+  useEffect(() => {
+    if (demoMode) return;
+    let alive = true;
+    apiFetch<{ applications: ShellApplication[] }>('/api/applications')
+      .then((data) => {
+        if (alive) setApplications(data.applications);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [demoMode]);
+
+  // ⌘K / Ctrl+K focuses the quick search, matching the visible hint.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  const realCounts: Record<string, number> = {
+    '/dashboard': applications.filter((app) => app.stage === 'review').length,
+    '/jobs': applications.length,
+    '/applications': applications.filter(
+      (app) => !['review', 'rejected'].includes(app.stage),
+    ).length,
+    '/interview': applications.filter((app) =>
+      ['screen', 'technical', 'final', 'offer'].includes(app.stage),
+    ).length,
+  };
+  const visibleWorkspaceItems = workspaceItems.map((item) => ({
+    ...item,
+    count: demoMode
+      ? item.count
+      : realCounts[item.href] > 0
+        ? String(realCounts[item.href])
+        : undefined,
+  }));
+  const exportApplicationsCsv = () => {
+    if (!applications.length) return;
+    const escapeCell = (value: unknown) => `"${String(value).replaceAll('"', '""')}"`;
+    const rows = applications.map((app) =>
+      [
+        app.company,
+        app.title,
+        app.stage,
+        app.match_score ?? '',
+        app.location,
+        app.created_at,
+        app.updated_at,
+        app.source_url,
+      ]
+        .map(escapeCell)
+        .join(','),
+    );
+    const csv = [
+      'Company,Role,Stage,Match,Location,Saved,Updated,Listing URL',
+      ...rows,
+    ].join('\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'automateapply-applications.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
   const collapsed = useSyncExternalStore(
     subscribeToSidebarPreference,
     getSidebarPreference,
@@ -238,7 +344,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
         <div className="mt-auto w-full shrink-0 rounded-[12px] border border-[rgba(255,220,170,.06)] bg-[#1a1815] p-2.5">
           <div className={`flex min-w-0 items-center gap-2.5 ${collapsed ? 'md:gap-1 md:p-0' : ''}`}>
             <div className={`grid shrink-0 place-items-center rounded-full bg-[radial-gradient(circle_at_30%_30%,#f4b35a,#b85e0e_60%,#5a2e08)] font-bold text-[#1a1208] ${collapsed ? 'md:size-7 md:text-[10px]' : 'size-9 text-xs'}`}>
-              SC
+              {demoMode ? 'SC' : initialsOf(profile?.full_name ?? '', email)}
             </div>
             <div className={`min-w-0 flex-1 leading-[1.25] ${collapsed ? 'md:hidden' : ''}`}>
               <p className="truncate text-[13px] font-medium text-[#faf3e8]">{demoMode ? 'Sarah Chen' : profile?.full_name || email || 'Complete your profile'}</p>
@@ -273,6 +379,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
             <form aria-label="Quick job search" title="Quick job search opens Job Search with this keyword." className="workspace-search flex h-10 w-[300px] items-center gap-3 rounded-full border bg-[#1a1816] px-4 text-[#8d8276]" onSubmit={(event) => { event.preventDefault(); const query = quickJobQuery.trim(); router.push(query ? `/jobs?q=${encodeURIComponent(query)}` : '/jobs'); }}>
               <Search size={16} />
               <input
+                ref={searchInputRef}
                 value={quickJobQuery}
                 onChange={(event) => setQuickJobQuery(event.target.value)}
                 aria-label="Quick job search"
@@ -284,18 +391,31 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
               </kbd>
             </form>
             <button
-              aria-label="Notifications"
+              aria-label="Notifications (coming soon)"
+              title="Coming soon"
+              disabled
               className="relative grid size-10 place-items-center rounded-xl bg-[#191714] text-[#d8c7b4]"
             >
               <Bell size={19} />
-              <span className="absolute right-2 top-2 size-1.5 rounded-full bg-primary" />
             </button>
             {active.label === 'Applications' ? (
-              <button type="button" className="ghost-button flex h-10 items-center gap-2 px-5 text-sm">
-                <Upload size={16} /> Export
+              <button
+                type="button"
+                onClick={exportApplicationsCsv}
+                disabled={!applications.length}
+                title={applications.length ? 'Download your applications as CSV' : 'Nothing to export yet'}
+                className="ghost-button flex h-10 items-center gap-2 px-5 text-sm"
+              >
+                <Upload size={16} /> Export CSV
               </button>
             ) : active.label === 'Resume & AI' ? (
-              <button type="button" className="ghost-button flex h-10 items-center gap-2 px-5 text-sm">
+              // PDF export needs a document renderer; disabled until it ships.
+              <button
+                type="button"
+                disabled
+                title="Coming soon"
+                className="ghost-button flex h-10 items-center gap-2 px-5 text-sm"
+              >
                 <Download size={16} /> Download PDF
               </button>
             ) : active.label === 'Job Search' || active.label === 'Dashboard' ? (
@@ -360,13 +480,5 @@ export function TinyCompany({
     >
       {letter}
     </span>
-  );
-}
-export function ChevronLink({ children }: { children: React.ReactNode }) {
-  return (
-    <button className="ghost-button flex items-center gap-1 px-3 py-2 text-xs">
-      {children}
-      <ChevronRight size={14} />
-    </button>
   );
 }

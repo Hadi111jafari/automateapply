@@ -54,6 +54,64 @@ type Filters = {
 };
 type MatchTab = 'all' | '90' | '80' | 'saved';
 
+// Mirrors the locations the jobs API can resolve (GEO_ALIASES in
+// app/api/jobs/route.ts). Anything else would search worldwide with a
+// "not recognized" notice, so the dropdown only offers supported values.
+const JOB_LOCATIONS = [
+  'United States',
+  'Canada',
+  'United Kingdom',
+  'Europe',
+  'Germany',
+  'France',
+  'Australia',
+  'India',
+  'Singapore',
+  'Japan',
+  'Brazil',
+  'Mexico',
+];
+
+type JobsCachePayload = {
+  query: string;
+  location: string;
+  allJobs: Job[];
+  saved: Record<string, SavedApplication>;
+  applicationRecords: SavedApplication[];
+  materialApplicationIds: Set<string>;
+  at: number;
+};
+
+// Session cache so revisiting Job Search reuses the last provider results
+// (quick chips keep filtering them locally) instead of refetching on every
+// visit. An explicit Search or Reset always fetches fresh and rewrites this.
+const JOBS_CACHE_TTL = 5 * 60 * 1000;
+let jobsCache: JobsCachePayload | null = null;
+
+function readJobsCache(query: string): JobsCachePayload | null {
+  if (
+    !jobsCache ||
+    jobsCache.query !== query ||
+    Date.now() - jobsCache.at >= JOBS_CACHE_TTL
+  ) {
+    return null;
+  }
+  return jobsCache;
+}
+
+function writeJobsCache(payload: Omit<JobsCachePayload, 'at'>) {
+  jobsCache = { ...payload, at: Date.now() };
+}
+
+function syncJobsCache(
+  next: Pick<JobsCachePayload, 'saved' | 'applicationRecords'>,
+) {
+  if (jobsCache) {
+    jobsCache.saved = next.saved;
+    jobsCache.applicationRecords = next.applicationRecords;
+  }
+}
+
 const demoJobs: Job[] = [
   {
     sourceId: 'demo:1',
@@ -270,6 +328,18 @@ export function Jobs() {
           ),
         ),
       );
+      writeJobsCache({
+        query: nextQuery,
+        location: nextFilters.location,
+        allJobs: full,
+        saved: applications,
+        applicationRecords: applicationData.applications,
+        materialApplicationIds: new Set(
+          materialData.materials.flatMap((item) =>
+            item.application_id ? [item.application_id] : [],
+          ),
+        ),
+      });
       if (useDefaults) {
         if (!nextQuery && jobData.meta.effectiveQuery)
           setQuery(jobData.meta.effectiveQuery);
@@ -352,16 +422,30 @@ export function Jobs() {
       }, 0);
       return;
     }
-    // The URL is the source of truth for a quick search from the workspace header.
+    const cached = readJobsCache(urlQuery);
     window.setTimeout(() => {
       setQuery(urlQuery);
+      if (
+        cached &&
+        cached.query === urlQuery &&
+        Date.now() - cached.at < JOBS_CACHE_TTL
+      ) {
+        // Reuse the last provider results; quick chips filter locally.
+        setAllJobs(cached.allJobs);
+        setJobs(applyLocalFilters(cached.allJobs, filters));
+        setSaved(cached.saved);
+        setApplicationRecords(cached.applicationRecords);
+        setMaterialApplicationIds(cached.materialApplicationIds);
+        // Keep the country filter coherent with the cached results.
+        if (cached.location) setFilters((current) => ({ ...current, location: cached.location }));
+        setLoading(false);
+        return;
+      }
       void loadJobs(urlQuery, filters, true);
     }, 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demoMode, urlQuery]);
 
-  const updateFilter = <K extends keyof Filters>(key: K, value: Filters[K]) =>
-    setFilters((current) => ({ ...current, [key]: value }));
   const applyFilter = <K extends keyof Filters>(key: K, value: Filters[K]) => {
     const next = { ...filters, [key]: value } as Filters;
     setFilters(next);
@@ -430,15 +514,18 @@ export function Jobs() {
           }),
         },
       );
-      setSaved((items) => ({
-        ...items,
+      const nextSaved = {
+        ...saved,
         [job.sourceId]: application,
         [job.legacySourceId]: application,
-      }));
-      setApplicationRecords((items) => [
+      };
+      const nextRecords = [
         application,
-        ...items.filter((item) => item.id !== application.id),
-      ]);
+        ...applicationRecords.filter((item) => item.id !== application.id),
+      ];
+      setSaved(nextSaved);
+      setApplicationRecords(nextRecords);
+      syncJobsCache({ saved: nextSaved, applicationRecords: nextRecords });
       setNotice(`${job.company} was saved to your review queue.`);
     } catch (cause) {
       setError(
@@ -467,14 +554,17 @@ export function Jobs() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: application.id, stage: 'applied' }),
       });
-      setSaved((items) => ({
-        ...items,
+      const nextSaved = {
+        ...saved,
         [job.sourceId]: updated,
         [job.legacySourceId]: updated,
-      }));
-      setApplicationRecords((items) =>
-        items.map((item) => (item.id === updated.id ? updated : item)),
+      };
+      const nextRecords = applicationRecords.map((item) =>
+        item.id === updated.id ? updated : item,
       );
+      setSaved(nextSaved);
+      setApplicationRecords(nextRecords);
+      syncJobsCache({ saved: nextSaved, applicationRecords: nextRecords });
       setNotice(
         `Marked ${job.company} as applied. AutomateApply did not submit an application for you.`,
       );
@@ -544,23 +634,12 @@ export function Jobs() {
         }}
       >
         <label className="jobs-field">
-          <span>Role, skills, or company</span>
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="e.g. Frontend Engineer"
             aria-label="Detailed job search"
             className="jobs-query-input"
-          />
-        </label>
-        <label className="jobs-field">
-          <span>Eligible location</span>
-          <input
-            value={filters.location}
-            onChange={(event) => updateFilter('location', event.target.value)}
-            placeholder="Remote, USA, Europe…"
-            aria-label="Eligible job location"
-            className="jobs-location-input"
           />
         </label>
         <button
@@ -570,64 +649,83 @@ export function Jobs() {
         >
           Remote
         </button>
-        <button
-          type="button"
-          onClick={() =>
-            applyFilter('type', filters.type === 'full-time' ? '' : 'full-time')
-          }
-          className={`jobs-filter-chip${filters.type === 'full-time' ? ' active' : ''}`}
-        >
-          Full-time
-        </button>
-        <button
-          type="button"
-          onClick={() =>
-            applyFilter('level', filters.level === 'senior' ? '' : 'senior')
-          }
-          className={`jobs-filter-chip${filters.level === 'senior' ? ' active' : ''}`}
-        >
-          Senior level
-        </button>
-        <button
-          type="button"
-          onClick={() =>
-            applyFilter('minSalary', filters.minSalary === 120000 ? 0 : 120000)
-          }
-          className={`jobs-filter-chip${filters.minSalary === 120000 ? ' active' : ''}`}
-        >
-          $120k+
-        </button>
-        <button
-          type="button"
-          onClick={() =>
-            applyFilter('minScore', filters.minScore === 75 ? 0 : 75)
-          }
-          className={`jobs-filter-chip${filters.minScore === 75 ? ' active' : ''}`}
-        >
-          75%+ match
-        </button>
-        <button
-          type="button"
-          onClick={() => setMoreOpen((current) => !current)}
-          aria-expanded={moreOpen}
-          className={`ghost-button jobs-more-filters${moreOpen ? ' active' : ''}`}
-        >
-          <Filter size={14} /> More filters
-        </button>
-        <button
-          type="submit"
-          className="amber-button px-4 py-2 text-sm"
-          disabled={loading}
-        >
-          {loading && <LoaderCircle size={14} className="animate-spin" />}{' '}
-          Search
-        </button>
+          <button
+            type="button"
+            onClick={() =>
+              applyFilter('type', filters.type === 'full-time' ? '' : 'full-time')
+            }
+            className={`jobs-filter-chip${filters.type === 'full-time' ? ' active' : ''}`}
+          >
+            Full-time
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              applyFilter('level', filters.level === 'senior' ? '' : 'senior')
+            }
+            className={`jobs-filter-chip${filters.level === 'senior' ? ' active' : ''}`}
+          >
+            Senior level
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              applyFilter('minSalary', filters.minSalary === 120000 ? 0 : 120000)
+            }
+            className={`jobs-filter-chip${filters.minSalary === 120000 ? ' active' : ''}`}
+          >
+            $120k+
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              applyFilter('minScore', filters.minScore === 75 ? 0 : 75)
+            }
+            className={`jobs-filter-chip${filters.minScore === 75 ? ' active' : ''}`}
+          >
+            75%+ match
+          </button>
+          <button
+            type="button"
+            onClick={() => setMoreOpen((current) => !current)}
+            aria-expanded={moreOpen}
+            className={`ghost-button jobs-more-filters${moreOpen ? ' active' : ''}`}
+          >
+            <Filter size={14} /> More filters
+          </button>
+          <button
+            type="submit"
+            className="amber-button px-4 py-2 text-sm"
+            disabled={loading}
+          >
+            {loading && <LoaderCircle size={14} className="animate-spin" />}{' '}
+            Search
+          </button>
       </form>
       {moreOpen && (
         <section
           className="jobs-advanced-filters"
           aria-label="More job filters"
         >
+          <label>
+            Country
+            <select
+              value={filters.location}
+              onChange={(event) => applyFilter('location', event.target.value)}
+            >
+              <option value="">Any location</option>
+              {JOB_LOCATIONS.map((country) => (
+                <option key={country} value={country}>
+                  {country}
+                </option>
+              ))}
+              {/* Profile-derived or legacy locations that are not in the
+                  known list still render so the select never lies. */}
+              {filters.location && !JOB_LOCATIONS.includes(filters.location) ? (
+                <option value={filters.location}>{filters.location}</option>
+              ) : null}
+            </select>
+          </label>
           <label>
             Employment type
             <select

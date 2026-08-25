@@ -13,6 +13,7 @@ export function useProfile() {
   const demoMode = useDemoMode();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [email, setEmail] = useState('');
+  const [pending, setPending] = useState(true);
   useEffect(() => {
     if (demoMode) return;
     let alive = true;
@@ -20,7 +21,7 @@ export function useProfile() {
       void Promise.all([apiFetch<{ profile: Profile | null }>('/api/profile'), getSupabaseBrowserClient()?.auth.getUser()]).then(([result, auth]) => {
         if (!alive) return;
         setProfile(result.profile); setEmail(auth?.data.user?.email ?? result.profile?.email ?? '');
-      }).catch(() => undefined);
+      }).catch(() => undefined).finally(() => { if (alive) setPending(false); });
     };
     load();
     window.addEventListener(profileChangedEvent, load);
@@ -30,5 +31,5 @@ export function useProfile() {
     setProfile(next);
     window.dispatchEvent(new Event(profileChangedEvent));
   };
-  return { demoMode, profile, email, setProfile: updateProfile };
+  return { demoMode, profile, email, loading: !demoMode && pending, setProfile: updateProfile };
 }

@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AutomateApply
 
-## Getting Started
+A Next.js MVP for authenticated job discovery, AI resume tailoring, and a
+review-only application tracker. AutomateApply **never submits applications**
+for you: you review each tailored draft, apply on the original listing, and
+mark it applied here to keep your pipeline honest.
 
-First, run the development server:
+## Requirements
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Node.js (see `package.json` engines / LTS)
+- A Supabase project (database, auth, and storage)
+- `pdftotext` (poppler) and LibreOffice (`soffice`) on the PATH for PDF/DOCX
+  resume text extraction. Unsupported or failed extractions surface a clear
+  error in the UI; TXT and pasted text always work.
+
+## Environment variables
+
+Create `.env.local`:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=<your project url>
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<your anon key>   # or NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+# AI tailoring — at least one provider. OpenRouter example:
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+OPENROUTER_API_KEY=<key>
+OPENROUTER_MODEL=<model id>        # optional
+
+# Optional fallbacks / alternatives:
+TOGETHER_BASE_URL / TOGETHER_API_KEY / TOGETHER_MODEL
+GEMINI_BASE_URL / GEMINI_API_KEY / GEMINI_MODEL
+AI_BASE_URL / AI_API_KEY / AI_MODEL   # generic OpenAI-compatible override
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Supabase migrations (run in order, SQL editor)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. `supabase/schema.sql` — tables, RLS policies, private `resumes` bucket,
+   profile auto-creation trigger.
+2. `supabase/profile-auth-migration.sql` — profile columns for existing
+   projects (idempotent).
+3. `supabase/backfill-existing-profiles.sql` — backfills profile rows for
+   users created before the trigger existed.
+4. `supabase/tailored-materials-migration.sql` — tailored resume/cover-letter
+   storage.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Local setup
 
-## Learn More
+```bash
+npm install
+npm run dev     # http://localhost:3000
+npm run build   # release check
+npm run lint    # eslint
+npx tsc --noEmit
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Demo mode vs real accounts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Real accounts** use Supabase auth. Every workspace route is protected on
+  the server; signed-out visitors are redirected to `/login`. All data
+  (profile, resumes, applications, tailored materials) is private per account
+  via RLS.
+- **Demo mode** ("Try Demo Account" on the login page) is a local-only
+  showcase with Sarah's sample data. It creates no Supabase session and
+  cannot call authenticated APIs. Fabricated demo widgets (live run, market
+  intel, upcoming interviews) appear only in demo mode; real accounts see
+  only data derived from their own records.
+- Unfinished features are disabled in place — grayed out with a "Coming
+  soon" tooltip (Market Intel, Messages, notifications, PDF download,
+  account deletion, Grid/Map views, deal-breakers). Working exports:
+  applications CSV (Applications header) and full-account JSON (Settings →
+  Privacy).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Manual QA checklist
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Sign up with email confirmation enabled; confirm redirect, sign in, sign
+   out, wrong password, and password validation all behave.
+2. New account: profile row auto-created with email + safe display name;
+   dashboard shows zero-state only; sidebar shows no fabricated counts.
+3. Settings changes survive refresh and sign-out/sign-in.
+4. Upload a resume (PDF/DOCX/TXT), reload, select it, tailor for a saved
+   job, edit, save, reload — materials persist.
+5. Two accounts: neither can list, download, or mutate the other's resumes,
+   applications, or files (Storage RLS).
+6. Job search: Jobicy/Himalayas success, no-results, and provider-failure
+   states; save → tailor → open original listing → mark applied manually.
+7. Applications: create/move stages, reject/restore; dashboard reflects the
+   same data after refresh.
+8. `npm run lint`, `npx tsc --noEmit`, and `npm run build` pass before every
+   release candidate.

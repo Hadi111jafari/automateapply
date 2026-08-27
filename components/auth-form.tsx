@@ -44,9 +44,7 @@ export function AuthForm() {
         setNotice('Check your inbox to confirm your email, then sign in.');
         return;
       }
-      // Stay on “Please wait…” until /dashboard finishes loading; the
-      // navigation itself unmounts this form. replace() already fetches a
-      // fresh render with the new session cookies, so no extra refresh.
+
       router.replace('/settings');
     } catch {
       setPending(false);

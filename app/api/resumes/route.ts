@@ -1,31 +1,42 @@
 import { requireUser } from '@/lib/api-auth';
 import { z } from 'zod';
-import { execFile } from 'node:child_process';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { promisify } from 'node:util';
+import mammoth from 'mammoth';
+import { getData } from 'pdf-parse/worker';
+import { PDFParse } from 'pdf-parse';
+
+PDFParse.setWorker(getData());
+
+// Force Node.js runtime (not Edge) so pdf-parse and its worker have
+// access to node:path, node:fs, and the full Node.js APIs.
+export const runtime = 'nodejs';
 
 const MAX_SIZE = 8 * 1024 * 1024;
 const ALLOWED = new Set(['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain']);
-const execFileAsync = promisify(execFile);
 
-async function extractText(file: File) {
-  if (file.type === 'text/plain') return (await file.text()).trim();
-  const directory = await mkdtemp(join(tmpdir(), 'automateapply-resume-'));
-  const source = join(directory, file.type === 'application/pdf' ? 'resume.pdf' : 'resume.docx');
-  try {
-    await writeFile(source, Buffer.from(await file.arrayBuffer()));
-    if (file.type === 'application/pdf') {
-      const output = join(directory, 'resume.txt');
-      await execFileAsync('pdftotext', [source, output], { timeout: 20_000 });
-      return (await readFile(output, 'utf8')).trim();
-    }
-    await execFileAsync('libreoffice', ['--headless', '--convert-to', 'txt:Text', '--outdir', directory, source], { timeout: 30_000 });
-    return (await readFile(join(directory, 'resume.txt'), 'utf8')).trim();
-  } finally {
-    await rm(directory, { recursive: true, force: true });
+async function extractTextBuffer(contentType: string, arrayBuffer: ArrayBuffer) {
+  if (contentType === 'text/plain') {
+    const text = Buffer.from(arrayBuffer).toString('utf8').trim();
+    console.info('[resumes] extractTextBuffer: text/plain — extracted', { length: text.length });
+    return text;
   }
+  if (contentType === 'application/pdf') {
+    console.info('[resumes] extractTextBuffer: PDF — starting parse', { byteLength: arrayBuffer.byteLength });
+    const parser = new PDFParse({ data: new Uint8Array(arrayBuffer) });
+    try {
+      const result = await parser.getText();
+      const text = result.text.trim();
+      console.info('[resumes] extractTextBuffer: PDF — parse succeeded', { textLength: text.length, totalPages: result.total });
+      return text;
+    } finally {
+      await parser.destroy();
+    }
+  }
+  // DOCX
+  console.info('[resumes] extractTextBuffer: DOCX — starting mammoth extraction', { byteLength: arrayBuffer.byteLength });
+  const result = await mammoth.extractRawText({ buffer: Buffer.from(arrayBuffer) });
+  const text = result.value.trim();
+  console.info('[resumes] extractTextBuffer: DOCX — extraction succeeded', { textLength: text.length });
+  return text;
 }
 
 export async function GET(request: Request) {
@@ -46,17 +57,26 @@ export async function POST(request: Request) {
   if (file instanceof File && (file.size > MAX_SIZE || !ALLOWED.has(file.type))) return Response.json({ error: 'Use a PDF, DOCX, or text file up to 8 MB.' }, { status: 400 });
   let filePath: string | null = null;
   if (file instanceof File) {
+    // Read the buffer once and reuse for both storage upload and text
+    // extraction. Some runtimes invalidate the File object after the first
+    // consume (e.g. Supabase upload), so we must not call file.arrayBuffer()
+    // a second time.
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
     filePath = `${auth.user.id}/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-    const { error } = await auth.supabase.storage.from('resumes').upload(filePath, file, { contentType: file.type, upsert: false });
+    const { error } = await auth.supabase.storage.from('resumes').upload(filePath, buffer, { contentType: file.type, upsert: false });
     if (error) return Response.json({ error: error.message }, { status: 400 });
+    try {
+      content = await extractTextBuffer(file.type, arrayBuffer);
+    } catch (err) {
+      console.error('[resumes] extractText failed:', { contentType: file.type, fileName: file.name, fileSize: file.size, err });
+      return Response.json({ error: 'We could not read that document. Try another PDF/DOCX or paste the resume text.' }, { status: 422 });
+    }
   }
-  // A file upload is authoritative. This also protects against stale text
-  // submitted by an older client after the user chooses another resume file.
-  if (file instanceof File) {
-    try { content = await extractText(file); }
-    catch { return Response.json({ error: 'We could not read that document. Try another PDF/DOCX or paste the resume text.' }, { status: 422 }); }
+  if (!content) {
+    console.warn('[resumes] extractText returned empty content', { hasFile: file instanceof File, contentType: file instanceof File ? file.type : 'n/a', fileName: file instanceof File ? file.name : 'n/a' });
+    return Response.json({ error: 'No readable text was found. Try a text-based PDF/DOCX or paste the resume text.' }, { status: 422 });
   }
-  if (!content) return Response.json({ error: 'No readable text was found. Try a text-based PDF/DOCX or paste the resume text.' }, { status: 422 });
   const { data, error } = await auth.supabase.from('resumes').insert({ user_id: auth.user.id, name: file instanceof File ? file.name : 'Pasted resume', content, file_path: filePath }).select().single();
   if (error) return Response.json({ error: error.message }, { status: 400 });
   return Response.json({ resume: data }, { status: 201 });

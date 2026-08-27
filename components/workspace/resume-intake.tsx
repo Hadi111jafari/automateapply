@@ -28,7 +28,9 @@ export function ResumeIntake() {
     setSavingResume(true); setError(undefined); setNotice(undefined);
     try {
       if (file) {
-        const form = new FormData(); form.set('content', text); form.set('file', file);
+        // A file upload must not inherit text from the previously selected
+        // resume. The API extracts and stores the selected file's own text.
+        const form = new FormData(); form.set('file', file);
         const { resume } = await apiFetch<{ resume: Resume }>('/api/resumes', { method: 'POST', body: form });
         setResumes((current) => [resume, ...current]); setSelectedId(resume.id); setText(resume.content); setFile(undefined); setNotice('Resume uploaded and extracted securely.');
       } else if (selectedId) {

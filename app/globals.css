@@ -292,17 +292,32 @@ h4 {
   box-shadow: var(--amber-shadow-card);
 }
 
-/* Settings section nav: pinned below the sticky header on mobile; vertically
-   centered in the viewport on desktop (overrides .panel's overflow so it can
-   scroll internally when taller than the viewport). Declared after .panel so
-   it wins the cascade. */
+/* Settings section nav: pinned below the sticky header on mobile as a slim,
+ * horizontally scrollable tab strip (the recommended pattern for a secondary
+ * sidebar on small screens); vertically centered in the viewport on desktop.
+ * Declared after .panel so it wins the cascade. */
 .settings-nav {
   position: sticky;
   z-index: 20;
   top: 86px;
   overflow-x: auto;
   overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
+
+.settings-nav::-webkit-scrollbar {
+  display: none;
+}
+
+/* Edge fades hint that the tab strip scrolls horizontally on phones/tablets. */
+@media (max-width: 1023px) {
+  .settings-nav {
+    padding-block: 2px;
+    mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 14px), transparent);
+  }
+}
+
 @media (min-width: 1024px) {
   .settings-nav {
     top: 50%;
@@ -1484,17 +1499,25 @@ h4 {
 
   .dashboard .job-row {
     grid-template-columns: 44px minmax(0, 1fr);
+    gap: 12px;
+    padding: 14px;
   }
 
+  /* Badges get their own full-width wrapping row so the pills can never
+     overflow the card on narrow phones. */
   .dashboard .job-badges {
-    grid-column: 2;
+    grid-column: 1 / -1;
     grid-row: 2;
+    flex-wrap: wrap;
+    white-space: normal;
   }
 
   .dashboard .job-score-num {
     grid-column: 1;
     grid-row: 3;
     align-self: center;
+    justify-self: start;
+    font-size: 20px;
   }
 
   .dashboard .job-row > .dashboard-button-sm,
@@ -1520,6 +1543,11 @@ h4 {
 
   .dashboard .up-copy {
     flex: 1 1 calc(100% - 76px);
+  }
+
+  /* Long "10:00 AM · 30 min · Zoom" lines wrap instead of overflowing. */
+  .dashboard .up-meta {
+    white-space: normal;
   }
 
   .dashboard .up-item > .pill {
@@ -2037,6 +2065,58 @@ h4 {
     min-height: 0;
   }
 
+  /* Phones: drop secondary columns (checkboxes, applied date, activity) so the
+     table fits without horizontal scrolling; the scroll wrapper stays as a
+     safety net for very long role titles. */
+  .applications-table {
+    min-width: 0;
+  }
+
+  .applications-table .applications-table-optional {
+    display: none;
+  }
+
+  .applications-table th {
+    padding: 12px 12px;
+  }
+
+  .applications-table td {
+    padding: 14px 12px;
+    font-size: .8125rem;
+  }
+
+  /* Phones: drop the row-action column too and compact everything so the
+     remaining Company / Role / Stage / Match columns fit without scrolling. */
+  .applications-table .applications-table-action {
+    display: none;
+  }
+
+  .applications-table th {
+    padding: 10px 8px;
+    font-size: .5625rem;
+  }
+
+  .applications-table td {
+    padding: 12px 8px;
+    font-size: .75rem;
+  }
+
+  .applications-company-cell {
+    gap: 6px;
+  }
+
+  .applications-company-cell strong {
+    max-width: 92px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .applications-chip {
+    padding: 4px 8px;
+    font-size: .625rem;
+  }
+
   .applications-timeline-card {
     padding: 20px 16px;
   }
@@ -2200,8 +2280,11 @@ h4 {
 
 .jobs-filter-group {
   display: flex;
+  flex: 1 1 auto;
+  align-items: center;
   flex-wrap: wrap;
   gap: 8px;
+  min-width: 0;
 }
 
 .jobs-filter-chip,
@@ -2634,16 +2717,42 @@ h4 {
 }
 
 @media (max-width: 1100px) {
-  .jobs-filterbar {
-    align-items: flex-start;
+  /* Tablet: the search field and its button own the first row; quick filter
+     chips (with More filters) flow below them instead of interleaving. */
+  .jobs-search-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'field search'
+      'chips chips';
+    row-gap: 12px;
+  }
+
+  .jobs-field {
+    grid-area: field;
+  }
+
+  .jobs-query-input,
+  .jobs-field .jobs-query-input {
+    width: 100%;
+    min-width: 0;
   }
 
   .jobs-query-input {
-    flex: 1 1 280px;
+    flex: none;
+  }
+
+  .jobs-search-button {
+    grid-area: search;
+    justify-self: end;
+  }
+
+  .jobs-filter-group {
+    grid-area: chips;
   }
 
   .jobs-more-filters {
-    margin-left: 0;
+    margin-left: auto;
   }
 
   .jobs-job-row {
@@ -2693,12 +2802,25 @@ h4 {
     flex: 1;
   }
 
-  .jobs-layout-tabs {
+  .jobs-layout-tabs button {
     flex: 0 1 auto;
   }
 
-  .jobs-layout-tabs button {
-    flex: 0 1 auto;
+  /* De-clutter job cards on small screens: let titles wrap, keep the match
+     note to two lines, and show at most three skill tags. */
+  .jobs-job-heading h2 {
+    white-space: normal;
+  }
+
+  .jobs-match-explanation {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .jobs-job-tags .jobs-chip:nth-child(n + 4) {
+    display: none;
   }
 
   .jobs-job-row {
@@ -2737,22 +2859,31 @@ h4 {
     padding: 14px;
   }
 
-  .jobs-query-input,
-  .jobs-field,
-  .jobs-filter-group,
-  .jobs-more-filters,
-  .jobs-auto-apply {
+  /* Phone stack: search field, full-width Search button, then filter chips
+     two per row with More filters as its own centered row. */
+  .jobs-search-form {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'field'
+      'search'
+      'chips';
+    row-gap: 10px;
+  }
+
+  .jobs-search-button {
     width: 100%;
+    justify-self: stretch;
   }
 
   .jobs-filter-group .jobs-filter-chip {
-    flex: 1 1 auto;
+    flex: 1 1 calc(50% - 4px);
     justify-content: center;
   }
 
-  .jobs-more-filters,
-  .jobs-auto-apply {
+  .jobs-more-filters {
+    flex: 1 1 100%;
     justify-content: center;
+    margin-left: 0;
   }
 
   .jobs-view-controls {
@@ -2763,8 +2894,24 @@ h4 {
     width: 100%;
   }
 
-  .jobs-job-heading h2 {
-    white-space: normal;
+  .jobs-job-row {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+
+  .jobs-logo {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+    border-radius: 12px;
+    font-size: .9rem;
+  }
+
+  .jobs-score strong {
+    font-size: 1.25rem;
+  }
+
+  .jobs-action {
+    padding-inline: 12px;
   }
 
   .jobs-job-meta {

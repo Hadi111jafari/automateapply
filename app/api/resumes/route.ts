@@ -50,7 +50,9 @@ export async function POST(request: Request) {
     const { error } = await auth.supabase.storage.from('resumes').upload(filePath, file, { contentType: file.type, upsert: false });
     if (error) return Response.json({ error: error.message }, { status: 400 });
   }
-  if (!content && file instanceof File) {
+  // A file upload is authoritative. This also protects against stale text
+  // submitted by an older client after the user chooses another resume file.
+  if (file instanceof File) {
     try { content = await extractText(file); }
     catch { return Response.json({ error: 'We could not read that document. Try another PDF/DOCX or paste the resume text.' }, { status: 422 }); }
   }

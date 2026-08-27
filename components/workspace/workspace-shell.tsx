@@ -183,8 +183,12 @@ function SidebarSection({
   );
 }
 
-export function WorkspaceShell({ children }: { children: React.ReactNode }) {
-  const demoMode = useDemoMode();
+export function WorkspaceShell({ children, demo = false }: { children: React.ReactNode; demo?: boolean }) {
+  const clientDemoMode = useDemoMode();
+  // The server knows the demo state from the cookie before hydration; OR-ing
+  // it with the client flag keeps the shell in demo mode even if localStorage
+  // is unavailable (private modes, embedded preview frames).
+  const demoMode = clientDemoMode || demo;
   const { profile, email } = useProfile();
   const pathname = usePathname();
   const router = useRouter();
@@ -434,10 +438,10 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function WorkspacePage({ children }: { children: React.ReactNode }) {
+export function WorkspacePage({ children, demo = false }: { children: React.ReactNode; demo?: boolean }) {
   return (
-    <WorkspaceShell>
-      <div className="mx-auto  px-4 py-8 md:px-9">{children}</div> 
+    <WorkspaceShell demo={demo}>
+      <div className="mx-auto  px-4 py-8 md:px-9">{children}</div>
     </WorkspaceShell> //removed max-w-[1320px] after mx-auto class and got fixed the extra space around content in dashboard
   );
 } 

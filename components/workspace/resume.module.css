@@ -50,6 +50,10 @@
     letter-spacing: -.01em;
 }
 
+.companyTitle select {
+    max-width: 100%;
+}
+
 .meta {
     margin: 4px 0 0;
     color: var(--amber-text-3);
@@ -425,6 +429,14 @@
     }
 }
 
+/* Tablet: let the job title block shrink so logo, title, and score share one
+   row instead of wrapping into a cluttered stack. */
+@media (max-width: 900px) {
+    .company {
+        flex-basis: 240px;
+    }
+}
+
 @media (max-width: 680px) {
 
     .jobCard,
@@ -433,8 +445,45 @@
         border-radius: 14px;
     }
 
-    .score {
+    /* Phone: the tailor/cover-letter header stacks cleanly — logo+title row,
+       then match score, then full-width actions. */
+    .jobCard {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .company {
+        flex: 1 1 auto;
+    }
+
+    .companyTitle {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+        overflow-wrap: anywhere;
+    }
+
+    .companyTitle select {
+        width: 100%;
+        min-width: 0;
         margin-left: 0;
+    }
+
+    .tag {
+        margin-left: 0;
+    }
+
+    .score {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        margin-left: 0;
+    }
+
+    .scoreValue {
+        margin: 0;
+        font-size: 28px;
     }
 
     .sectionHead {
@@ -450,6 +499,10 @@
         flex-wrap: wrap;
     }
 
+    .actions > * {
+        flex: 1 1 auto;
+    }
+
     .paper {
         padding: 24px;
     }
@@ -459,7 +512,11 @@
     }
 
     .coverFooter {
-        align-items: flex-start;
+        align-items: stretch;
         flex-direction: column;
+    }
+
+    .coverFooter > button {
+        width: 100%;
     }
 }

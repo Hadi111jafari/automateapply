@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api-client';
 import { useProfile } from '@/lib/use-profile';
 import { initialsOf } from './workspace-shell';
@@ -66,8 +66,9 @@ function Toggle({ value, onChange }: { value: boolean; onChange: () => void }) {
   );
 }
 
-export function Settings() {
-  const { demoMode, profile: savedProfile, email, loading: profileLoading, setProfile: setSavedProfile } = useProfile();
+export function Settings({ initialDemo = false }: { initialDemo?: boolean }) {
+  const { demoMode: clientDemo, profile: savedProfile, email, loading: profileLoading, setProfile: setSavedProfile } = useProfile();
+  const demoMode = clientDemo || initialDemo;
   const [activeSection, setActiveSection] = useState(0);
   const [exporting, setExporting] = useState(false);
   const [stealthOverride, setStealthOverride] = useState<boolean | null>(null);
@@ -87,6 +88,29 @@ export function Settings() {
   const searchValues = demoMode
     ? { targetRoles: 'Senior Product Manager, Director of Product', locations: 'Remote (US), San Francisco, New York', minimumSalary: '$180,000' }
     : { targetRoles: searchDraft.targetRoles || savedProfile?.target_roles.join(', ') || '', locations: searchDraft.locations || savedProfile?.locations.join(', ') || '', minimumSalary: searchDraft.minimumSalary || (savedProfile?.minimum_salary ? `$${savedProfile.minimum_salary.toLocaleString()}` : '') };
+  const savedSearchValues = {
+    targetRoles: savedProfile?.target_roles.join(', ') ?? '',
+    locations: savedProfile?.locations.join(', ') ?? '',
+    minimumSalary: savedProfile?.minimum_salary
+      ? `$${savedProfile.minimum_salary.toLocaleString()}`
+      : '',
+  };
+  const searchPreferencesDirty =
+    searchValues.targetRoles !== savedSearchValues.targetRoles ||
+    searchValues.locations !== savedSearchValues.locations ||
+    searchValues.minimumSalary !== savedSearchValues.minimumSalary;
+  const profileDirty =
+    profile.fullName !== (savedProfile?.full_name ?? '') ||
+    profile.headline !== (savedProfile?.headline ?? '') ||
+    profile.phone !== (savedProfile?.phone ?? '') ||
+    profile.linkedin !== (savedProfile?.linkedin ?? '') ||
+    profile.currentEmployer !== (savedProfile?.current_employer ?? '');
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(undefined), 4_500);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
   const persist = async (overrides: Partial<typeof profile> = {}, preferenceOverrides: Partial<{ stealth: boolean; anonymous: boolean; threshold: number }> = {}) => {
     if (demoMode) return;
     const current = { fullName: savedProfile?.full_name ?? email.split('@')[0] ?? '', headline: savedProfile?.headline ?? '', phone: savedProfile?.phone ?? '', linkedin: savedProfile?.linkedin ?? '', currentEmployer: savedProfile?.current_employer ?? '', targetRoles: savedProfile?.target_roles.join(', ') ?? '', locations: savedProfile?.locations.join(', ') ?? '', minimumSalary: savedProfile?.minimum_salary?.toString() ?? '', ...overrides };
@@ -164,11 +188,11 @@ export function Settings() {
           title="Profile"
           subtitle="The basics AutomateApply uses to find and apply to roles"
         >
-          <div className="mt-6 flex flex-wrap items-center gap-4">
-            <div className="grid size-[72px] place-items-center rounded-full bg-gradient-to-br from-[#ffbe65] to-[#b45a02] text-2xl font-bold text-black">
+          <div className="mt-6 flex flex-col items-center gap-4 text-center lg:flex-row lg:items-center lg:text-left">
+            <div className="grid size-[72px] shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#ffbe65] to-[#b45a02] text-2xl font-bold text-black">
               {demoMode ? 'SC' : initialsOf(savedProfile?.full_name ?? '', email)}
             </div>
-            <div className="min-w-[220px] flex-1">
+            <div className="min-w-0 flex-1">
               <h3 className="display text-2xl font-bold">{shownName}</h3>
               <p className="text-sm text-muted-foreground">
                 {shownHeadline}
@@ -176,14 +200,16 @@ export function Settings() {
               {/* Real privacy states from your settings; the previous
                   "Visible to recruiters" / "Public profile" pills were
                   fabricated and removed. */}
-              <span className={`pill mt-2 ${stealth ? 'green' : 'red'}`}>
-                Stealth mode {stealth ? 'on' : 'off'}
-              </span>{' '}
-              <span className={`pill ${anonymous ? 'green' : ''}`}>
-                Anonymous applications {anonymous ? 'on' : 'off'}
-              </span>
+              <div className="mt-2 flex flex-wrap justify-center gap-2 lg:justify-start">
+                <span className={`pill ${stealth ? 'green' : 'red'}`}>
+                  Stealth mode {stealth ? 'on' : 'off'}
+                </span>
+                <span className={`pill ${anonymous ? 'green' : ''}`}>
+                  Anonymous applications {anonymous ? 'on' : 'off'}
+                </span>
+              </div>
             </div>
-            <button onClick={() => { setProfile({ fullName: savedProfile?.full_name ?? '', headline: savedProfile?.headline ?? '', phone: savedProfile?.phone ?? '', linkedin: savedProfile?.linkedin ?? '', currentEmployer: savedProfile?.current_employer ?? '', targetRoles: '', locations: '', minimumSalary: '' }); setEditing(true); }} className="ghost-button px-4 py-2 text-sm">Edit</button>
+            <button onClick={() => { setProfile({ fullName: savedProfile?.full_name ?? '', headline: savedProfile?.headline ?? '', phone: savedProfile?.phone ?? '', linkedin: savedProfile?.linkedin ?? '', currentEmployer: savedProfile?.current_employer ?? '', targetRoles: '', locations: '', minimumSalary: '' }); setEditing(true); }} className="ghost-button w-full px-4 py-2 text-sm lg:w-auto">Edit</button>
           </div>
           <div className="mt-5">
             {[
@@ -280,7 +306,7 @@ export function Settings() {
                 </div>
               </ComingSoon>
             </Row>
-            {!demoMode && <button type="button" onClick={() => { void persist(searchValues).then(() => { setSearchDraft({ targetRoles: '', locations: '', minimumSalary: '' }); setNotice('Search preferences saved.'); }).catch((cause: unknown) => setProfileError(cause instanceof Error ? cause.message : 'Could not save preferences.')); }} className="amber-button mt-5 px-4 py-2 text-sm">Save search preferences</button>}
+            {!demoMode && <button type="button" onClick={() => { void persist(searchValues).then(() => { setSearchDraft({ targetRoles: '', locations: '', minimumSalary: '' }); setNotice('Search preferences saved.'); }).catch((cause: unknown) => setProfileError(cause instanceof Error ? cause.message : 'Could not save preferences.')); }} disabled={profileLoading || !searchPreferencesDirty} className="amber-button mt-5 mx-auto flex px-4 py-2 text-sm lg:mx-0">Save search preferences</button>}
           </div>
         </Section>
         <ComingSoon><Section
@@ -462,7 +488,7 @@ export function Settings() {
         </Section>
       </div>
       {(profileError || notice) && <p className={`fixed bottom-5 right-5 z-[120] rounded-xl px-4 py-3 text-sm shadow-xl ${profileError ? 'bg-red-950 text-red-200' : 'bg-emerald-950 text-emerald-200'}`}>{profileError || notice}</p>}
-      {editing && <div className="fixed inset-0 z-[100] grid place-items-center bg-black/70 p-4"><div className="panel w-full max-w-xl p-6"><div className="flex items-center justify-between"><h2 className="display text-2xl font-bold">Edit profile</h2><button onClick={() => setEditing(false)} className="text-muted-foreground">Close</button></div><p className="mt-1 text-sm text-muted-foreground">Manage roles, locations, and salary in Search preferences.</p><div className="mt-5 grid gap-3 sm:grid-cols-2">{([['fullName','Name'], ['headline','Headline'], ['phone','Phone'], ['linkedin','LinkedIn'], ['currentEmployer','Current employer']] as const).map(([key, label]) => <label key={key} className="text-sm sm:col-span-1">{label}<input value={profile[key]} onChange={(event) => setProfile((current) => ({ ...current, [key]: event.target.value }))} className="mt-1 w-full rounded-xl border border-border bg-[#1a1815] px-3 py-2" /></label>)}</div>{profileError && <p className="mt-3 text-sm text-red-400">{profileError}</p>}<div className="mt-6 flex justify-end gap-2"><button onClick={() => setEditing(false)} className="ghost-button px-4 py-2 text-sm">Cancel</button><button onClick={() => void saveProfile()} disabled={saving} className="amber-button px-4 py-2 text-sm">{saving ? 'Saving…' : 'Save profile'}</button></div></div></div>}
+      {editing && <div className="fixed inset-0 z-[100] grid place-items-center bg-black/70 p-4"><div className="panel w-full max-w-xl p-6"><div className="flex items-center justify-between"><h2 className="display text-2xl font-bold">Edit profile</h2><button onClick={() => setEditing(false)} className="text-muted-foreground">Close</button></div><p className="mt-1 text-sm text-muted-foreground">Manage roles, locations, and salary in Search preferences.</p><div className="mt-5 grid gap-3 sm:grid-cols-2">{([['fullName','Name'], ['headline','Headline'], ['phone','Phone'], ['linkedin','LinkedIn'], ['currentEmployer','Current employer']] as const).map(([key, label]) => <label key={key} className="text-sm sm:col-span-1">{label}<input value={profile[key]} onChange={(event) => setProfile((current) => ({ ...current, [key]: event.target.value }))} className="mt-1 w-full rounded-xl border border-border bg-[#1a1815] px-3 py-2" /></label>)}</div>{profileError && <p className="mt-3 text-sm text-red-400">{profileError}</p>}<div className="mt-6 flex justify-end gap-2"><button onClick={() => setEditing(false)} className="ghost-button px-4 py-2 text-sm">Cancel</button><button onClick={() => void saveProfile()} disabled={saving || !profile.fullName.trim() || !profileDirty} className="amber-button px-4 py-2 text-sm">{saving ? 'Saving…' : 'Save profile'}</button></div></div></div>}
     </div>
   );
 }

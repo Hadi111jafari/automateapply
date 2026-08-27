@@ -20,8 +20,8 @@ const upcoming = [
   ["V", "Vercel · Onsite (final)", "5 rounds · SF or remote", "Onsite", "Monday · 9:00 AM"],
 ] as const;
 
-export function Interview() {
-  const demoMode = useDemoMode();
+export function Interview({ initialDemo = false }: { initialDemo?: boolean }) {
+  const demoMode = useDemoMode() || initialDemo;
   const [listening, setListening] = useState(true);
   const [activeQuestion, setActiveQuestion] = useState(0);
   const [showPlaybook, setShowPlaybook] = useState(true);

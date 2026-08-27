@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ExternalLink, Filter, LoaderCircle, RotateCcw } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { apiFetch } from '@/lib/api-client';
+import { apiFetch, describeLoadError } from '@/lib/api-client';
 import { toast } from 'sonner';
 import { useDemoMode } from '@/lib/demo-mode';
 
@@ -230,8 +230,11 @@ function isNew(postedAt: string) {
   return Number.isFinite(date) && date >= Date.now() - 24 * 60 * 60 * 1000;
 }
 
-export function Jobs() {
-  const demoMode = useDemoMode();
+export function Jobs({ initialDemo = false }: { initialDemo?: boolean }) {
+  const clientDemoMode = useDemoMode();
+  // Server cookie flag OR client flag: keeps demo mode stable even when
+  // localStorage is unavailable (private modes, embedded preview frames).
+  const demoMode = clientDemoMode || initialDemo;
   const searchParams = useSearchParams();
   const urlQuery = searchParams.get('q')?.trim() ?? '';
   const [query, setQuery] = useState('');
@@ -255,15 +258,27 @@ export function Jobs() {
   >(new Set());
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string>();
-  const [error, setError] = useState<string>();
+  const [error, setError] = useState<{ message: string; auth: boolean }>();
   const [notice, setNotice] = useState<string>();
   const [moreOpen, setMoreOpen] = useState(false);
   const [matchTab, setMatchTab] = useState<MatchTab>('all');
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(undefined), 4_500);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
   // StrictMode runs mount effects twice in dev; remember the query the mount
   // effect already loaded so providers are not hit twice per page view.
   const autoLoadedQuery = useRef<string | null>(null);
   // Non-null while a silent retry of a failed initial load is scheduled.
   const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Latest demo state for async callbacks (loadJobs can be invoked from stale
+  // effect closures); guarantees the demo workspace never calls the API.
+  const demoRef = useRef(demoMode);
+  useEffect(() => {
+    demoRef.current = demoMode;
+  }, [demoMode]);
 
   const loadJobs = async (
     nextQuery: string,
@@ -271,6 +286,11 @@ export function Jobs() {
     useDefaults = false,
     allowRetry = useDefaults,
   ) => {
+    if (demoRef.current) {
+      setLoading(false);
+      setError(undefined);
+      return;
+    }
     if (retryTimer.current) {
       clearTimeout(retryTimer.current);
       retryTimer.current = null;
@@ -381,19 +401,25 @@ export function Jobs() {
         );
       }
     } catch (cause) {
-      const message =
-        cause instanceof Error ? cause.message : 'Could not load jobs.';
+      const failure = describeLoadError(cause);
       console.error('Jobs load error:', cause);
-      if (allowRetry && message.startsWith(ALL_SOURCES_DOWN_PREFIX)) {
+      if (demoRef.current) {
+        // Demo flipped on while the request was in flight; ignore it.
+        setError(undefined);
+        setJobs(demoJobs);
+        setLoading(false);
+        return;
+      }
+      if (allowRetry && !failure.auth && failure.message.startsWith(ALL_SOURCES_DOWN_PREFIX)) {
         retryTimer.current = setTimeout(() => {
           retryTimer.current = null;
           void loadJobs(nextQuery, nextFilters, useDefaults, false);
         }, JOBS_RETRY_DELAY_MS);
         return;
       }
-      toast.error(message);
+      if (!failure.auth) toast.error(failure.message);
       setJobs([]);
-      setError(message);
+      setError(failure);
     } finally {
       // A retry is about to run; keep showing the loading state until then.
       if (!retryTimer.current) setLoading(false);
@@ -443,6 +469,8 @@ export function Jobs() {
     if (demoMode) {
       window.setTimeout(() => {
         setJobs(demoJobs);
+        setError(undefined);
+        setNotice(undefined);
         setLoading(false);
       }, 0);
       return;
@@ -555,9 +583,7 @@ export function Jobs() {
       syncJobsCache({ saved: nextSaved, applicationRecords: nextRecords });
       setNotice(`${job.company} was saved to your review queue.`);
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : 'Could not save this job.',
-      );
+      setError(describeLoadError(cause));
     } finally {
       setSavingId(undefined);
     }
@@ -596,11 +622,7 @@ export function Jobs() {
         `Marked ${job.company} as applied. AutomateApply did not submit an application for you.`,
       );
     } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : 'Could not update this application.',
-      );
+      setError(describeLoadError(cause));
     } finally {
       setSavingId(undefined);
     }
@@ -669,13 +691,14 @@ export function Jobs() {
             className="jobs-query-input"
           />
         </label>
-        <button
-          type="button"
-          onClick={() => applyFilter('remote', !filters.remote)}
-          className={`jobs-filter-chip${filters.remote ? ' active' : ''}`}
-        >
-          Remote
-        </button>
+        <div className="jobs-filter-group">
+          <button
+            type="button"
+            onClick={() => applyFilter('remote', !filters.remote)}
+            className={`jobs-filter-chip${filters.remote ? ' active' : ''}`}
+          >
+            Remote
+          </button>
           <button
             type="button"
             onClick={() =>
@@ -720,14 +743,15 @@ export function Jobs() {
           >
             <Filter size={14} /> More filters
           </button>
-          <button
-            type="submit"
-            className="amber-button px-4 py-2 text-sm"
-            disabled={loading}
-          >
-            {loading && <LoaderCircle size={14} className="animate-spin" />}{' '}
-            Search
-          </button>
+        </div>
+        <button
+          type="submit"
+          className="amber-button jobs-search-button px-4 py-2 text-sm"
+          disabled={loading}
+        >
+          {loading && <LoaderCircle size={14} className="animate-spin" />}{' '}
+          Search
+        </button>
       </form>
       {moreOpen && (
         <section
@@ -1010,9 +1034,9 @@ export function Jobs() {
           </button>
         </div>
       )}
-      {error && (
+      {error && !demoMode && !error.auth && (
         <div className="jobs-error">
-          <p>{error}</p>
+          <p>{error.message}</p>
           <button
             type="button"
             onClick={search}
@@ -1020,6 +1044,18 @@ export function Jobs() {
           >
             <RotateCcw size={14} /> Try again
           </button>
+        </div>
+      )}
+      {error?.auth && (
+        <div className="jobs-empty">
+          <p className="display">Your session has ended</p>
+          <p>
+            Sign in again to keep searching — your saved jobs and filters are
+            waiting for you.
+          </p>
+          <Link href="/login" className="amber-button mt-5 px-4 py-2 text-sm">
+            Sign in
+          </Link>
         </div>
       )}
       {notice && <p className="jobs-notice">{notice}</p>}

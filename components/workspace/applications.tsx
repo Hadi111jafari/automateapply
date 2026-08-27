@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { apiFetch } from '@/lib/api-client';
+import { apiFetch, describeLoadError } from '@/lib/api-client';
 import { useDemoMode } from '@/lib/demo-mode';
 import type { ReactNode } from 'react';
 import { ExternalLink, MoreHorizontal, X } from 'lucide-react';
@@ -302,8 +302,11 @@ function buildTimeline(
     }));
 }
 
-export function Applications() {
-  const demoMode = useDemoMode();
+export function Applications({ initialDemo = false }: { initialDemo?: boolean }) {
+  const clientDemoMode = useDemoMode();
+  // Server cookie flag OR client flag keeps the demo board stable even when
+  // localStorage is unavailable (private modes, embedded preview frames).
+  const demoMode = clientDemoMode || initialDemo;
   const [demoColumns, setDemoColumns] = useState<ApplicationColumn[]>(() => initialColumns.map((column) => ({ ...column, count: 0, items: [] })));
   const [records, setRecords] = useState<ApplicationRecord[]>([]);
   const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
@@ -311,9 +314,15 @@ export function Applications() {
   const [view, setView] = useState<'kanban' | 'table' | 'timeline'>('kanban');
   const [filter, setFilter] = useState(-1);
   const [selected, setSelected] = useState<string>();
-  const [syncError, setSyncError] = useState<string>();
+  const [syncError, setSyncError] = useState<{ message: string; auth: boolean }>();
   const [draggingId, setDraggingId] = useState<string>();
   const [dragOverColumn, setDragOverColumn] = useState<number>();
+
+  useEffect(() => {
+    if (!selected) return;
+    const timer = window.setTimeout(() => setSelected(undefined), 4_500);
+    return () => window.clearTimeout(timer);
+  }, [selected]);
 
   useEffect(() => {
     if (demoMode) { window.setTimeout(() => setDemoColumns(initialColumns), 0); return; }
@@ -325,7 +334,7 @@ export function Applications() {
         setRecords(applicationData.applications);
         setTimelineEvents(buildTimeline(applicationData.applications, materialData.materials));
       })
-      .catch((error: unknown) => setSyncError(error instanceof Error ? error.message : 'Could not load applications.'))
+      .catch((error: unknown) => setSyncError(describeLoadError(error)))
       .finally(() => setLoading(false));
   }, [demoMode]);
 
@@ -360,7 +369,7 @@ export function Applications() {
             : record,
         ),
       );
-      setSyncError(error instanceof Error ? error.message : 'Could not update the application.');
+      setSyncError(describeLoadError(error));
     }
   };
 
@@ -378,15 +387,24 @@ export function Applications() {
     void persistStage(applicationId, record.company, record.stage, nextStage);
   };
 
-  // Demo interaction: cards jump one column forward, no backend involved.
-  const moveDemo = (columnIndex: number, itemIndex: number) => {
-    if (columnIndex >= demoColumns.length - 1) return;
+  // Demo board moves, no backend involved: cards can be dragged to any
+  // column (or clicked to advance one stage) exactly like a real account.
+  const moveDemoTo = (fromColumn: number, itemIndex: number, toColumn: number) => {
+    if (fromColumn === toColumn || toColumn < 0 || toColumn >= demoColumns.length) return;
     const next = demoColumns.map((column) => ({ ...column, items: [...column.items] }));
-    const [card] = next[columnIndex].items.splice(itemIndex, 1);
-    next[columnIndex + 1].items.unshift(card);
+    const [card] = next[fromColumn].items.splice(itemIndex, 1);
+    if (!card) return;
+    if (toColumn > fromColumn) card.muted = false;
+    if (next[toColumn].rejected) card.status = 'Rejected';
+    else if (next[toColumn].final) card.status = 'Offer out';
+    next[toColumn].items.unshift(card);
     setDemoColumns(next);
     setSelected(card.company);
   };
+
+  // Demo interaction: clicking a card advances it one column forward.
+  const moveDemo = (columnIndex: number, itemIndex: number) =>
+    moveDemoTo(columnIndex, itemIndex, columnIndex + 1);
 
   return (
     <section className="applications-page">
@@ -461,12 +479,22 @@ export function Applications() {
               ))}
             </div>
           </div>
-          {syncError && <p className="mb-3 text-sm text-red-400">{syncError}</p>}
+          {syncError && !syncError.auth && (
+            <p className="mb-3 text-sm text-red-400">{syncError.message}</p>
+          )}
+          {syncError?.auth && (
+            <p className="mb-3 text-sm text-muted-foreground">
+              {syncError.message}{' '}
+              <Link href="/login" className="underline underline-offset-4 hover:text-[#faf3e8]">
+                Sign in
+              </Link>
+            </p>
+          )}
           {loading && !demoMode && (
             <p className="py-8 text-center text-sm text-muted-foreground">Loading your pipeline…</p>
           )}
 
-          {view === 'kanban' && (!demoMode && !loading) && (
+          {view === 'kanban' && (!loading || demoMode) && (
             <section className="applications-kanban">
               {visibleColumns.map((column) => {
                 const columnIndex = columns.indexOf(column);
@@ -495,29 +523,39 @@ export function Applications() {
                       setDragOverColumn(undefined);
                       const id = event.dataTransfer.getData('text/plain') || draggingId;
                       if (!id) return;
-                      const record = records.find((item) => item.id === id);
-                      if (!record) return;
-                      // Dropping anywhere in a column moves the card to that column's primary stage.
-                      setApplicationStage(id, STAGE_COLUMNS[columnIndex].stages[0]);
+                      if (id.startsWith('demo:')) {
+                        // Demo cards carry their board coordinates instead of
+                        // an application id.
+                        const [, fromColumn, itemIndex] = id.split(':').map(Number);
+                        moveDemoTo(fromColumn, itemIndex, columnIndex);
+                      } else {
+                        const record = records.find((item) => item.id === id);
+                        if (!record) return;
+                        // Dropping anywhere in a column moves the card to that column's primary stage.
+                        setApplicationStage(id, STAGE_COLUMNS[columnIndex].stages[0]);
+                      }
                       setDraggingId(undefined);
                     }}
                   >
                     <h3>{column.name}<span>{column.items.length}</span></h3>
                     <div>
-                      {column.items.map((card) => {
+                      {column.items.map((card, itemIndex) => {
                         const record = records.find((item) => item.id === card.applicationId);
+                        const cardKey = card.applicationId ?? `demo:${columnIndex}:${itemIndex}`;
                         return (
                           <div
-                            key={`${card.applicationId}`}
-                            className={`applications-kanban-card${card.muted ? ' muted' : ''}${draggingId === card.applicationId ? ' opacity-50' : ''}`}
-                            draggable={!demoMode}
+                            key={cardKey}
+                            className={`applications-kanban-card${card.muted ? ' muted' : ''}${draggingId === cardKey ? ' opacity-50' : ''}`}
+                            draggable
                             onDragStart={(event) => {
-                              event.dataTransfer.setData('text/plain', card.applicationId ?? '');
+                              event.dataTransfer.setData('text/plain', cardKey);
                               event.dataTransfer.effectAllowed = 'move';
-                              setDraggingId(card.applicationId);
+                              setDraggingId(cardKey);
                             }}
                             onDragEnd={() => setDraggingId(undefined)}
-                            title="Drag to another stage"
+                            onClick={demoMode ? () => moveDemo(columnIndex, itemIndex) : undefined}
+                            style={demoMode && columnIndex < columns.length - 1 ? { cursor: 'pointer' } : undefined}
+                            title={demoMode ? 'Drag to another stage · or click to move forward' : 'Drag to another stage'}
                           >
                             <div className="applications-card-top">
                               <CompanyLogo letter={card.letter} tone={card.tone} small />
@@ -530,12 +568,13 @@ export function Applications() {
                                       aria-label={`Move ${card.company} forward to ${STAGE_COLUMNS[columnIndex + 1]?.name}`}
                                       title={`Move forward → ${STAGE_COLUMNS[columnIndex + 1]?.name}`}
                                       className="grid size-5 place-items-center rounded-md text-[#948370] transition hover:bg-[#302b25] hover:text-[#f3a133]"
-                                      onClick={() =>
+                                      onClick={(event) => {
+                                        event.stopPropagation();
                                         setApplicationStage(
                                           card.applicationId,
                                           STAGE_COLUMNS[columnIndex + 1].stages[0],
-                                        )
-                                      }
+                                        );
+                                      }}
                                     >
                                       →
                                     </button>
@@ -545,9 +584,10 @@ export function Applications() {
                                     aria-label={column.rejected ? `Restore ${card.company} to review` : `Reject ${card.company}`}
                                     title={column.rejected ? 'Restore to review queue' : 'Mark rejected'}
                                     className="grid size-5 place-items-center rounded-md text-[#948370] transition hover:bg-[#302b25] hover:text-[#f3a133]"
-                                    onClick={() =>
-                                      setApplicationStage(card.applicationId, column.rejected ? 'review' : 'rejected')
-                                    }
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      setApplicationStage(card.applicationId, column.rejected ? 'review' : 'rejected');
+                                    }}
                                   >
                                     {column.rejected ? '↺' : <X size={12} />}
                                   </button>
@@ -556,7 +596,7 @@ export function Applications() {
                             </div>
                             <p className="applications-card-role">{card.title}</p>
                             <div className="applications-card-foot">
-                              {record && record.updated_at > record.created_at ? (
+                              {!demoMode && record && record.updated_at > record.created_at ? (
                                 <Chip small>{relativeTime(record.updated_at)}</Chip>
                               ) : null}
                               {card.statusTone ? <Chip tone={card.statusTone} small>{card.status}</Chip> : <Chip small>{card.status}</Chip>}
@@ -580,41 +620,6 @@ export function Applications() {
               })}
             </section>
           )}
-          {view === 'kanban' && demoMode && (
-            <section className="applications-kanban">
-              {visibleColumns.map((column) => {
-                const columnIndex = columns.indexOf(column);
-                const isFinal = columnIndex >= columns.length - 1;
-                return (
-                  <div key={column.name} className={`applications-kanban-column${column.final ? ' final' : ''}`}>
-                    <h3>{column.name}<span>{column.items.length}</span></h3>
-                    <div>
-                      {column.items.map((card, itemIndex) => (
-                        <div
-                          key={`${card.company}-${card.title}-${itemIndex}`}
-                          className={`applications-kanban-card${card.muted ? ' muted' : ''}`}
-                          style={{ cursor: isFinal ? undefined : 'pointer' }}
-                          onClick={() => moveDemo(columnIndex, itemIndex)}
-                          title={isFinal ? undefined : 'Click to move forward one stage'}
-                        >
-                          <div className="applications-card-top">
-                            <CompanyLogo letter={card.letter} tone={card.tone} small />
-                            <span>{card.company}</span>
-                          </div>
-                          <p className="applications-card-role">{card.title}</p>
-                          <div className="applications-card-foot">
-                            {card.statusTone ? <Chip tone={card.statusTone} small>{card.status}</Chip> : <Chip small>{card.status}</Chip>}
-                            <span className="applications-card-score">{card.score}</span>
-                          </div>
-                        </div>
-                      ))}
-                      {!column.items.length && <p className="px-1 py-2 text-xs text-muted-foreground">—</p>}
-                    </div>
-                  </div>
-                );
-              })}
-            </section>
-          )}
 
           {view === 'table' && demoMode && (
             <section className="applications-table-card">
@@ -622,21 +627,23 @@ export function Applications() {
                 <table className="applications-table">
                   <thead>
                     <tr>
-                      <th><input aria-label="Select all applications" type="checkbox" /></th>
-                      <th>Company</th><th>Role</th><th>Stage</th><th>Match</th><th>Applied</th><th>Last activity</th><th />
+                      <th className="applications-table-optional"><input aria-label="Select all applications" type="checkbox" /></th>
+                      <th>Company</th><th>Role</th><th>Stage</th><th>Match</th>
+                      <th className="applications-table-optional">Applied</th>
+                      <th className="applications-table-optional">Last activity</th><th className="applications-table-action" />
                     </tr>
                   </thead>
                   <tbody>
                     {tableRows.map(([letter, company, role, stage, score, applied, activity, tone, chipTone]) => (
                       <tr key={`${company}-${role}`}>
-                        <td><input aria-label={`Select ${company}`} type="checkbox" /></td>
+                        <td className="applications-table-optional"><input aria-label={`Select ${company}`} type="checkbox" /></td>
                         <td><div className="applications-company-cell"><CompanyLogo letter={letter} tone={tone as LogoTone} small /><strong>{company}</strong></div></td>
                         <td className="muted-cell">{role}</td>
                         <td><Chip tone={chipTone as ChipTone}>{stage}</Chip></td>
                         <td><span className="applications-table-score">{score}</span></td>
-                        <td className="muted-cell">{applied}</td>
-                        <td className="muted-cell">{activity}</td>
-                        <td><button type="button" aria-label={`More actions for ${company}`} className="applications-more"><MoreHorizontal size={15} /></button></td>
+                        <td className="muted-cell applications-table-optional">{applied}</td>
+                        <td className="muted-cell applications-table-optional">{activity}</td>
+                        <td className="applications-table-action"><button type="button" aria-label={`More actions for ${company}`} className="applications-more"><MoreHorizontal size={15} /></button></td>
                       </tr>
                     ))}
                   </tbody>
@@ -651,7 +658,8 @@ export function Applications() {
                 <table className="applications-table">
                   <thead>
                     <tr>
-                      <th>Company</th><th>Role</th><th>Stage</th><th>Match</th><th>Updated</th><th />
+                      <th>Company</th><th>Role</th><th>Stage</th><th>Match</th>
+                      <th className="applications-table-optional">Updated</th><th className="applications-table-action" />
                     </tr>
                   </thead>
                   <tbody>
@@ -665,12 +673,12 @@ export function Applications() {
                           <td className="muted-cell">{record.title}</td>
                           <td><Chip tone={stageChipTone(record.stage) ?? 'neutral'}>{stageLabel(record.stage)}</Chip></td>
                           <td><span className="applications-table-score">{record.match_score ?? '—'}</span></td>
-                          <td className="muted-cell">{relativeTime(record.updated_at)}</td>
-                          <td>
-                            <a href={record.source_url} target="_blank" rel="noreferrer" aria-label={`Open the original ${record.company} listing`} className="applications-more">
-                              <ExternalLink size={15} />
-                            </a>
-                          </td>
+                          <td className="muted-cell applications-table-optional">{relativeTime(record.updated_at)}</td>
+                            <td className="applications-table-action">
+                              <a href={record.source_url} target="_blank" rel="noreferrer" aria-label={`Open the original ${record.company} listing`} className="applications-more">
+                                <ExternalLink size={15} />
+                              </a>
+                            </td>
                         </tr>
                       ))}
                   </tbody>

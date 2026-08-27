@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { apiFetch } from '@/lib/api-client';
+import { apiFetch, describeLoadError } from '@/lib/api-client';
 import { MiniTrend, TinyCompany } from './workspace-shell';
 import { useDemoMode } from '@/lib/demo-mode';
 
@@ -259,7 +259,7 @@ function RealDashboard() {
   const [weekCount, setWeekCount] = useState(0);
   const [lastWeekCount, setLastWeekCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>();
+  const [error, setError] = useState<{ message: string; auth: boolean }>();
 
   useEffect(() => {
     let alive = true;
@@ -282,7 +282,7 @@ function RealDashboard() {
         );
       })
       .catch((cause: unknown) =>
-        alive ? setError(cause instanceof Error ? cause.message : 'Could not load your workspace data.') : undefined,
+        alive ? setError(describeLoadError(cause)) : undefined,
       )
       .finally(() => alive && setLoading(false));
     return () => {
@@ -366,8 +366,21 @@ function RealDashboard() {
     return (
       <section className="panel grid min-h-[300px] place-items-center p-8 text-center">
         <div>
-          <h2 className="display text-2xl font-bold">Something went wrong</h2>
-          <p className="mt-2 text-sm text-red-400">{error}</p>
+          <h2 className="display text-2xl font-bold">
+            {error.auth ? 'Your session has ended' : 'Something went wrong'}
+          </h2>
+          {error.auth ? (
+            <>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Sign in again to pick up where you left off — your data is safe.
+              </p>
+              <Link href="/login" className="amber-button mt-5 px-5 py-2.5 text-sm">
+                Sign in
+              </Link>
+            </>
+          ) : (
+            <p className="mt-2 text-sm text-red-400">{error.message}</p>
+          )}
         </div>
       </section>
     );
@@ -613,8 +626,8 @@ function RealDashboard() {
   );
 }
 
-export function Dashboard() {
-  const demoMode = useDemoMode();
+export function Dashboard({ initialDemo = false }: { initialDemo?: boolean }) {
+  const demoMode = useDemoMode() || initialDemo;
   if (demoMode) return <DemoDashboard />;
   return <RealDashboard />;
 }

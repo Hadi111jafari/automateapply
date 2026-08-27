@@ -47,7 +47,7 @@ export function AuthForm() {
       // Stay on “Please wait…” until /dashboard finishes loading; the
       // navigation itself unmounts this form. replace() already fetches a
       // fresh render with the new session cookies, so no extra refresh.
-      router.replace('/dashboard');
+      router.replace('/settings');
     } catch {
       setPending(false);
       setError({

@@ -111,11 +111,11 @@ export function Settings({ initialDemo = false }: { initialDemo?: boolean }) {
     const timer = window.setTimeout(() => setNotice(undefined), 4_500);
     return () => window.clearTimeout(timer);
   }, [notice]);
-  const persist = async (overrides: Partial<typeof profile> = {}, preferenceOverrides: Partial<{ stealth: boolean; anonymous: boolean; threshold: number }> = {}) => {
+  const persist = async (overrides: Partial<typeof profile> = {}, preferenceOverrides: Partial<{ stealth: boolean; anonymous: boolean; threshold: number; onboardingCompleted: boolean }> = {}) => {
     if (demoMode) return;
     const current = { fullName: savedProfile?.full_name ?? email.split('@')[0] ?? '', headline: savedProfile?.headline ?? '', phone: savedProfile?.phone ?? '', linkedin: savedProfile?.linkedin ?? '', currentEmployer: savedProfile?.current_employer ?? '', targetRoles: savedProfile?.target_roles.join(', ') ?? '', locations: savedProfile?.locations.join(', ') ?? '', minimumSalary: savedProfile?.minimum_salary?.toString() ?? '', ...overrides };
     const preferences = { stealth, anonymous, threshold, ...preferenceOverrides };
-    const result = await apiFetch<{ profile: NonNullable<typeof savedProfile> }>('/api/profile', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fullName: current.fullName, headline: current.headline, phone: current.phone, linkedin: current.linkedin, currentEmployer: current.currentEmployer, targetRoles: current.targetRoles.split(',').map((item) => item.trim()).filter(Boolean), locations: current.locations.split(',').map((item) => item.trim()).filter(Boolean), minimumSalary: current.minimumSalary ? Number(current.minimumSalary.replace(/[^0-9]/g, '')) : null, autoApplyThreshold: preferences.threshold, stealth: preferences.stealth, anonymousApplications: preferences.anonymous }) });
+    const result = await apiFetch<{ profile: NonNullable<typeof savedProfile> }>('/api/profile', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fullName: current.fullName, headline: current.headline, phone: current.phone, linkedin: current.linkedin, currentEmployer: current.currentEmployer, targetRoles: current.targetRoles.split(',').map((item) => item.trim()).filter(Boolean), locations: current.locations.split(',').map((item) => item.trim()).filter(Boolean), minimumSalary: current.minimumSalary ? Number(current.minimumSalary.replace(/[^0-9]/g, '')) : null, autoApplyThreshold: preferences.threshold, stealth: preferences.stealth, anonymousApplications: preferences.anonymous, onboardingCompleted: preferences.onboardingCompleted ?? false }) });
     setSavedProfile(result.profile);
   };
   const exportAccountData = async () => {
@@ -183,6 +183,25 @@ export function Settings({ initialDemo = false }: { initialDemo?: boolean }) {
         ))}
       </nav>
       <div className="min-w-0 space-y-5">
+        {!demoMode && savedProfile && !savedProfile.onboarding_completed && (
+          <div className="panel border-l-4 border-[#e89438] bg-[linear-gradient(90deg,rgba(232,148,56,.12),rgba(232,148,56,.02))] p-5 sm:p-6">
+            <p className="eyebrow">Welcome to AutomateApply</p>
+            <h2 className="display mt-2 text-xl font-bold">Let&apos;s set your job match criteria</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              To find roles worth applying to, we need three things below: the
+              <b className="text-[#faf3e8]"> target roles </b>
+              you&apos;re after, the
+              <b className="text-[#faf3e8]"> locations </b>
+              you&apos;d work in, and your
+              <b className="text-[#faf3e8]"> minimum base salary</b>. After you
+              save, we&apos;ll help you upload a resume and start searching.
+            </p>
+            <p className="mt-3 text-xs text-[#9d8d7b]">
+              Step 1 of 3 — after this, you&apos;ll head to Resume &amp; AI,
+              then Job Search.
+            </p>
+          </div>
+        )}
         <Section
           id="profile"
           title="Profile"
@@ -306,7 +325,7 @@ export function Settings({ initialDemo = false }: { initialDemo?: boolean }) {
                 </div>
               </ComingSoon>
             </Row>
-            {!demoMode && <button type="button" onClick={() => { void persist(searchValues).then(() => { setSearchDraft({ targetRoles: '', locations: '', minimumSalary: '' }); setNotice('Search preferences saved.'); }).catch((cause: unknown) => setProfileError(cause instanceof Error ? cause.message : 'Could not save preferences.')); }} disabled={profileLoading || !searchPreferencesDirty} className="amber-button mt-5 mx-auto flex px-4 py-2 text-sm lg:mx-0">Save search preferences</button>}
+            {!demoMode && <button type="button" onClick={() => { void persist(searchValues, { stealth, anonymous, threshold, onboardingCompleted: true }).then(() => { setSearchDraft({ targetRoles: '', locations: '', minimumSalary: '' }); setNotice('Search preferences saved.'); }).catch((cause: unknown) => setProfileError(cause instanceof Error ? cause.message : 'Could not save preferences.')); }} disabled={profileLoading || !searchPreferencesDirty} className="amber-button mt-5 mx-auto flex px-4 py-2 text-sm lg:mx-0">Save search preferences</button>}
           </div>
         </Section>
         <ComingSoon><Section

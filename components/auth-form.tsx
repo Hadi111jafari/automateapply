@@ -3,6 +3,8 @@ import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { endDemoMode, startDemoMode } from '@/lib/demo-mode';
 import { describeAuthError } from '@/lib/auth-errors';
+import { apiFetch } from '@/lib/api-client';
+import type { Profile } from '@/lib/use-profile';
 export function AuthForm() {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [error, setError] = useState<{ message: string; transient: boolean }>();
@@ -44,10 +46,15 @@ export function AuthForm() {
         setNotice('Check your inbox to confirm your email, then sign in.');
         return;
       }
-      // Stay on “Please wait…” until /dashboard finishes loading; the
-      // navigation itself unmounts this form. replace() already fetches a
-      // fresh render with the new session cookies, so no extra refresh.
-      router.replace('/dashboard');
+
+      // Check onboarding status to decide where to land.
+      try {
+        const { profile } = await apiFetch<{ profile: Profile | null }>('/api/profile');
+        router.replace(profile?.onboarding_completed ? '/dashboard' : '/settings');
+      } catch {
+        // If profile fetch fails, default to settings (safe for new users).
+        router.replace('/settings');
+      }
     } catch {
       setPending(false);
       setError({

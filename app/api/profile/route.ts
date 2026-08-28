@@ -7,6 +7,7 @@ const profileSchema = z.object({
   currentEmployer: z.string().trim().max(100).default(''), targetRoles: z.array(z.string().trim().max(100)).max(10).default([]),
   locations: z.array(z.string().trim().max(100)).max(10).default([]), minimumSalary: z.number().int().min(0).nullable().default(null),
   autoApplyThreshold: z.number().int().min(0).max(100).default(90), stealth: z.boolean().default(true), anonymousApplications: z.boolean().default(false),
+  onboardingCompleted: z.boolean().default(false),
 });
 
 export async function GET(request: Request) {
@@ -18,7 +19,7 @@ export async function GET(request: Request) {
   const fallbackName = auth.user.email?.split('@')[0] ?? 'New user';
   const { data: created, error: createError } = await auth.supabase
     .from('profiles')
-    .upsert({ id: auth.user.id, email: auth.user.email ?? null, full_name: fallbackName })
+    .upsert({ id: auth.user.id, email: auth.user.email ?? null, full_name: fallbackName, onboarding_completed: false })
     .select()
     .single();
   if (createError) return Response.json({ error: createError.message }, { status: 400 });
@@ -47,6 +48,7 @@ export async function PUT(request: Request) {
       auto_apply_threshold: profile.autoApplyThreshold,
       stealth: profile.stealth,
       anonymous_applications: profile.anonymousApplications,
+      onboarding_completed: profile.onboardingCompleted,
       updated_at: new Date().toISOString(),
     })
     .select()

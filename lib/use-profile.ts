@@ -7,7 +7,7 @@ import { useDemoMode } from '@/lib/demo-mode';
 
 const profileChangedEvent = 'automateapply-profile-changed';
 
-export type Profile = { full_name: string; email: string | null; headline: string; phone: string; linkedin: string; current_employer: string; target_roles: string[]; locations: string[]; minimum_salary: number | null; auto_apply_threshold: number; stealth: boolean; anonymous_applications: boolean };
+export type Profile = { full_name: string; email: string | null; headline: string; phone: string; linkedin: string; current_employer: string; target_roles: string[]; locations: string[]; minimum_salary: number | null; auto_apply_threshold: number; stealth: boolean; anonymous_applications: boolean; onboarding_completed: boolean };
 
 export function useProfile() {
   const demoMode = useDemoMode();

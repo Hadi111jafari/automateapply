@@ -20,6 +20,7 @@ create table if not exists public.profiles (
     updated_at timestamptz not null default now()
 );
 alter table public.profiles add column if not exists email text;
+alter table public.profiles add column if not exists onboarding_completed boolean not null default false;
 create table if not exists public.resumes (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references auth.users(id) on delete cascade,

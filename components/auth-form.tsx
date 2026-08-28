@@ -3,6 +3,8 @@ import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { endDemoMode, startDemoMode } from '@/lib/demo-mode';
 import { describeAuthError } from '@/lib/auth-errors';
+import { apiFetch } from '@/lib/api-client';
+import type { Profile } from '@/lib/use-profile';
 export function AuthForm() {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [error, setError] = useState<{ message: string; transient: boolean }>();
@@ -45,7 +47,14 @@ export function AuthForm() {
         return;
       }
 
-      router.replace('/settings');
+      // Check onboarding status to decide where to land.
+      try {
+        const { profile } = await apiFetch<{ profile: Profile | null }>('/api/profile');
+        router.replace(profile?.onboarding_completed ? '/dashboard' : '/settings');
+      } catch {
+        // If profile fetch fails, default to settings (safe for new users).
+        router.replace('/settings');
+      }
     } catch {
       setPending(false);
       setError({
